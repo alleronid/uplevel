@@ -10,7 +10,7 @@
         <meta name="description" content="<?= strip_tags($web['description']); ?>">
         <meta name="keywords" content="<?= strip_tags($web['keywords']); ?>">
 
-        <link rel="shortcut icon" href="<?= base_url(); ?>/assets/images/<?= $web['logo']; ?>">
+        <link rel="shortcut icon" href="<?= base_url(); ?>/assets/images/alleron-logo.png">
         <link rel="stylesheet" href="<?= base_url(); ?>/assets/plugins/simplebar/css/simplebar.css">
         <link rel="stylesheet" href="<?= base_url(); ?>/assets/css/bootstrap.min.css">
         <link rel="stylesheet" href="<?= base_url(); ?>/assets/plugins/bootstrap-datatable/css/dataTables.bootstrap4.min.css">
@@ -26,22 +26,28 @@
         <link href="https://unpkg.com/bootstrap-table@1.21.0/dist/bootstrap-table.min.css" rel="stylesheet">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Swiper/3.4.1/css/swiper.min.css">
         <link rel="stylesheet" href="https://unpkg.com/flickity@2/dist/flickity.min.css">
+
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
         
         <!-- Global site tag (gtag.js) - Google Analytics -->
 
 
         <style>
+            
             :root {
                 /* --warna: #120037;
                 --warna_2: #1A004D;
                 --warna_3: #00396e; */
-                --warna: #4C0027;
-                --warna_2: #750550;
-                --warna_3: #980F5A;
+                --warna: #262626;
+                --warna_2: #1e1e1e;
+                --warna_3: #B71C1C;
                 --text-dark : #CCCCCC;
                 --text-light : #FFFFFF;
                 --link: #A685F5;
-                --btn-primary: #865BE2;
+                --btn-primary: #D32F2F;
                 --btn-hover: #FFCC00;
                 --secondary-btn: #FFCC00;
                 --error : #FF4D4D;
@@ -90,6 +96,12 @@
             }
             body, .circle-primary {
                 background: var(--warna);
+                font-family: "Rajdhani", serif;
+                font-optical-sizing: auto;
+                font-style: normal;
+                font-weight: 600;
+                background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+                background-size: 10px 10px;
             }
             .bg-footer {
                 background-color: var(--warna);
@@ -355,7 +367,18 @@
             .text-dark {
                 color: ;
             }
+            
+            .font-label-nav{
+                font-size: 16px !important;
+            }
 
+            .text-footer-link{
+                color: #d32f2f;
+            }
+
+            .img-png {
+                filter: hue-rotate(200deg) saturate(2);
+            }
         </style>
 
         <?php $this->renderSection('css'); ?>
@@ -388,8 +411,8 @@
 									    	<a class="nav-item nav-link" >Kalkulator ML<img src="<?= base_url(); ?>/assets/images/down-arrow.png" alt="" width="15" style="vertical-align:center"></a>
 									    </span>
 									    <div class="dropdown-menu mt-2" aria-labelledby="dropdownMenuButton" style="left: auto;right: 0;background: var(--warna_1);">
-									        <a class="dropdown-item text-white <?= $menu_active == 'kalkulatorwr' ? 'active' : ''; ?>" style="background-color:#818FB4;" href="<?= base_url(); ?>/kalkulatorwr">Kalkulator WR</a>
-									        <a class="dropdown-item text-white <?= $menu_active == 'hpmagicwheel' ? 'active' : ''; ?>" style="background-color:#818FB4;" href="<?= base_url(); ?>/hpmagicwheel">HP Magic Wheel</a>
+									        <a class="dropdown-item text-white <?= $menu_active == 'kalkulatorwr' ? 'active' : ''; ?>" style="background-color:var(--warna_3);" href="<?= base_url(); ?>/kalkulatorwr">Kalkulator WR</a>
+									        <a class="dropdown-item text-white <?= $menu_active == 'hpmagicwheel' ? 'active' : ''; ?>" style="background-color:var(--warna_3);" href="<?= base_url(); ?>/hpmagicwheel">HP Magic Wheel</a>
 									    </div>
 								</div>
                                 <a class="nav-item nav-link <?= $menu_active == 'Login' ? 'active' : ''; ?>" href="<?= base_url(); ?>/login">Login</a>
@@ -422,18 +445,18 @@
                                 <div class="col-lg-3 col-sm-6">
                                     <h5 class="pb-2">Halaman</h5>
                                     <ul class="menu-list">
-                                        <li><a href="<?= base_url(); ?>/">Halaman Utama</a></li>
-                                        <li><a href="<?= base_url(); ?>/payment">Cek Pesanan</a></li>
-                                        <li><a href="<?= base_url(); ?>/price">Daftar Harga</a></li>
-                                        <li><a href="<?= base_url(); ?>/syarat-ketentuan">Syarat & Ketentuan</a></li>
+                                        <li><a href="<?= base_url(); ?>/" style="text-decoration: none;">Halaman Utama</a></li>
+                                        <li><a href="<?= base_url(); ?>/payment" style="text-decoration: none;">Cek Pesanan</a></li>
+                                        <li><a href="<?= base_url(); ?>/price" style="text-decoration: none;">Daftar Harga</a></li>
+                                        <li><a href="<?= base_url(); ?>/syarat-ketentuan" style="text-decoration: none;">Syarat & Ketentuan</a></li>
                                     </ul>
                                 </div>
                                 <div class="col-lg-3 col-sm-3">
                                     <h5 class="pb-2">Sosial Media Kami</h5>
-                                    <a href="<?= $sm['wa']; ?>" style="font-size: 35px;">
+                                    <a href="<?= $sm['wa']; ?>" style="font-size: 35px;" class="text-footer-link">
                                         <i class="fa fa-whatsapp pr-4"></i>
                                     </a>
-                                    <a href="<?= $sm['ig']; ?>" style="font-size: 35px;">
+                                    <a href="<?= $sm['ig']; ?>" style="font-size: 35px;" class="text-footer-link">
                                         <i class="fa fa-instagram pr-4"></i>
                                     </a>
                                     <a href="<?= $sm['yt']; ?>" style="font-size: 35px;" hidden>
@@ -443,7 +466,8 @@
                                         <i class="fa fa-facebook pr-4"></i>
                                     </a>
                                     <a href="<?= $sm['tw']; ?>" style="font-size: 35px;">
-                                         <img src="https://lsgtopup.com/assets/images/tik-tok.png">
+                                    <svg xmlns="http://www.w3.org/2000/svg" height="35" width="35" viewBox="0 0 448 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#d32f2f" d="M448 209.9a210.1 210.1 0 0 1 -122.8-39.3V349.4A162.6 162.6 0 1 1 185 188.3V278.2a74.6 74.6 0 1 0 52.2 71.2V0l88 0a121.2 121.2 0 0 0 1.9 22.2h0A122.2 122.2 0 0 0 381 102.4a121.4 121.4 0 0 0 67 20.1z"/>
+                                </svg>
                                     </a>
                                 </div>
                             </div>
@@ -458,14 +482,14 @@
                     
                     <ul class="fab-options">
                       <li>
-                        <a href="<?= $sm['ig']; ?>" class="text-decoration-none" target="_blank">
+                        <a href="<?= $sm['ig']; ?>" class="text-decoration-none text-footer-link" target="_blank">
                         <div class="fab-icon-holder" style="background: radial-gradient(circle farthest-corner at 35% 90%, #fec564, transparent 50%), radial-gradient(circle farthest-corner at 0 140%, #fec564, transparent 50%), radial-gradient(ellipse farthest-corner at 0 -25%, #5258cf, transparent 50%), radial-gradient(ellipse farthest-corner at 20% -50%, #5258cf, transparent 50%), radial-gradient(ellipse farthest-corner at 100% 0, #893dc2, transparent 50%), radial-gradient(ellipse farthest-corner at 60% -20%, #893dc2, transparent 50%), radial-gradient(ellipse farthest-corner at 100% 100%, #d9317a, transparent), linear-gradient(#6559ca, #bc318f 30%, #e33f5f 50%, #f77638 70%, #fec66d 100%);">
                         <i class="fa fa-instagram"></i>
                         </div>
                       </a>
                       </li>
                       <li>
-                        <a href="<?= $sm['wa']; ?>" class="text-decoration-none" target="_blank">
+                        <a href="<?= $sm['wa']; ?>" class="text-decoration-none text-footer-link" target="_blank">
                         <div class="fab-icon-holder" style="background-color: #25D366;">
                         <i class="fa fa-whatsapp"></i>
                         </div>
@@ -505,9 +529,9 @@
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/morris.js/0.5.1/morris.min.js"></script>
-       <script src="https://code.iconify.design/iconify-icon/1.0.0/iconify-icon.min.js"></script>
-       <script src="https://tokovalorant.com/assets/js/promobox.js"></script>
-       <script src="https://unpkg.com/bootstrap-table@1.21.0/dist/bootstrap-table.min.js"></script>
+        <script src="https://code.iconify.design/iconify-icon/1.0.0/iconify-icon.min.js"></script>
+        <script src="https://tokovalorant.com/assets/js/promobox.js"></script>
+        <script src="https://unpkg.com/bootstrap-table@1.21.0/dist/bootstrap-table.min.js"></script>
         <script src="https://unpkg.com/bootstrap-table@1.21.0/dist/extensions/filter-control/bootstrap-table-filter-control.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/Swiper/3.4.1/js/swiper.min.js"></script>
         <script src="https://tokovalorant.com/assets/js/promobox.js"></script>
