@@ -1,5 +1,5 @@
 .bg-custom {
-  background-color: #222d38;
+  background-color: #120037;
   border-bottom: 1px;
 }
 
@@ -9,7 +9,7 @@
 }
 
 .strip-primary {
-  background-color: #2676b0;
+  background-color: #1A004D;
   position: absolute;
   width: 40px;
   height: 5px;
@@ -28,7 +28,7 @@
 
 .card {
   border-radius: 10px;
-  background-color: #263646;
+  background-color: #120037;
 }
 
 img.card {

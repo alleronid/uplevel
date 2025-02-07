@@ -32,9 +32,15 @@
 
         <style>
             :root {
-                --warna: #001d38;
-                --warna_2: #082744;
+                --warna: #120037;
+                --warna_2: #1A004D;
                 --warna_3: #00396e;
+                --text-dark : #CCCCCC;
+                --text-light : #FFFFFF;
+                --link: #A685F5;
+                --success: #FFCC00;
+                --error : #FF4D4D;
+                --secondary-btn: #00C898;
             }
 
             .content {
@@ -341,6 +347,9 @@
                 margin-bottom:100px !important;
             }
                 
+            .text-dark {
+                color: ;
+            }
 
         </style>
 
