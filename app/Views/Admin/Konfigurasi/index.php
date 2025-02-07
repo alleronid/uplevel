@@ -232,6 +232,31 @@
 										</form>
 									</div>
 								</div>
+
+								<div class="card">
+									<div class="card-body">
+										<h5 class="mb-3">Ayolinx</h5>
+										<form action="" method="POST">
+											<!-- <p>Silahkan arahkan Callback ke <code><?= base_url(); ?>/sistem/callback/tripay</code></p> -->
+											<div class="form-group row">
+												<label class="col-md-4 col-form-label text-white">Client Key</label>
+												<div class="col-md-8">
+													<input type="text" class="form-control" value="<?= $ayolinx['key']; ?>" name="key" autocomplete="off">
+												</div>
+											</div>
+											<div class="form-group row">
+												<label class="col-md-4 col-form-label text-white">Client Secret </label>
+												<div class="col-md-8">
+													<input type="text" class="form-control" value="<?= $ayolinx['secret']; ?>" name="secret" autocomplete="off">
+												</div>
+											</div>
+											<div class="text-right">
+												<button class="btn text-white" type="reset">Batal</button>
+												<button class="btn btn-primary" type="submit" name="tombol" value="ayolinx">Simpan</button>
+											</div>
+										</form>
+									</div>
+								</div>
 								
 								
 								<div class="card">

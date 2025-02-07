@@ -130,8 +130,14 @@ class Konfigurasi extends BaseController
                 return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
             } else if ($this->request->getPost('tombol') == 'tripay') {
                 $this->M_Base->u_update('tripay-key', $this->request->getPost('key'));
-                $this->M_Base->u_update('tripay-private', $this->request->getPost('private'));
+                $this->M_Base->u_update('tripay-private', $this->request->getPost('secret'));
                 $this->M_Base->u_update('tripay-merchant', $this->request->getPost('merchant'));
+
+                $this->session->setFlashdata('success', 'Data konfigurasi berhasil disimpan');
+                return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
+            }else if ($this->request->getPost('tombol') == 'ayolinx'){
+                $this->M_Base->u_update('ayolinx-key', $this->request->getPost('key'));
+                $this->M_Base->u_update('ayolinx-secret', $this->request->getPost('secret'));
 
                 $this->session->setFlashdata('success', 'Data konfigurasi berhasil disimpan');
                 return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
@@ -202,7 +208,10 @@ class Konfigurasi extends BaseController
                 'private' => $this->M_Base->u_get('tripay-private'),
                 'merchant' => $this->M_Base->u_get('tripay-merchant'),
             ],
-
+            'ayolinx' => [
+                'key' => $this->M_Base->u_get('ayolinx-key'),
+                'secret' => $this->M_Base->u_get('ayolinx-secret')
+            ],
             'ag' => [
                 'merchant' => $this->M_Base->u_get('ag-merchant'),
                 'secret' => $this->M_Base->u_get('ag-secret'),
