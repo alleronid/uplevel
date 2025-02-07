@@ -533,7 +533,7 @@ Terima kasih.
 	{
 		$curl = curl_init();
 		curl_setopt_array($curl, array(
-			CURLOPT_URL => "https://wapisender.id/api/v1/send-message",
+			CURLOPT_URL => "https://app.wapisender.com/api/send-message",
 			CURLOPT_RETURNTRANSFER => true,
 			CURLOPT_ENCODING => "",
 			CURLOPT_MAXREDIRS => 10,
@@ -571,26 +571,38 @@ Untuk selengkapnya silahkan lihat pada link yang tertera di bawah ini.
 
 Terima kasih.
 												";
-		$curl = curl_init();
-		curl_setopt_array($curl, array(
-			CURLOPT_URL => "https://wapisender.id/api/v1/send-message",
-			CURLOPT_RETURNTRANSFER => true,
-			CURLOPT_ENCODING => "",
-			CURLOPT_MAXREDIRS => 10,
-			CURLOPT_TIMEOUT => 0,
-			CURLOPT_FOLLOWLOCATION => true,
-			CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-			CURLOPT_CUSTOMREQUEST => "POST",
-			CURLOPT_POSTFIELDS => [
-				'api_key' => $this->u_get('wapi_api'),
-				'device_key' => $this->u_get('wapi_device'),
-				'destination' => $phone,
-				'message' => $message,
-			],
-		)
-		);
-		$response = curl_exec($curl);
-		curl_close($curl);
+		$body = array(
+          "api_key" => $this->u_get('wapi_api'),
+          "receiver" => $phone,
+          "data" => array("message" => $message)
+        );
+        
+        $curl = curl_init();
+        curl_setopt_array($curl, [
+          CURLOPT_URL => "https://app.wapisender.com/api/send-message",
+          CURLOPT_RETURNTRANSFER => true,
+          CURLOPT_ENCODING => "",
+          CURLOPT_MAXREDIRS => 10,
+          CURLOPT_TIMEOUT => 30,
+          CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+          CURLOPT_CUSTOMREQUEST => "POST",
+          CURLOPT_POSTFIELDS => json_encode($body),
+          CURLOPT_HTTPHEADER => [
+            "Accept: */*",
+            "Content-Type: application/json",
+          ],
+        ]);
+        
+        $response = curl_exec($curl);
+        $err = curl_error($curl);
+        
+        curl_close($curl);
+        
+        if ($err) {
+          echo "cURL Error #:" . $err;
+        } else {
+          echo $response;
+        }
 		sleep(1); #do not delete!
 	}
 
@@ -611,26 +623,38 @@ Untuk selengkapnya silahkan lihat pada link yang tertera di bawah ini.
 Terima kasih.
 												";
 
-		$curl = curl_init();
-		curl_setopt_array($curl, array(
-			CURLOPT_URL => "https://wapisender.id/api/v1/send-message",
-			CURLOPT_RETURNTRANSFER => true,
-			CURLOPT_ENCODING => "",
-			CURLOPT_MAXREDIRS => 10,
-			CURLOPT_TIMEOUT => 0,
-			CURLOPT_FOLLOWLOCATION => true,
-			CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-			CURLOPT_CUSTOMREQUEST => "POST",
-			CURLOPT_POSTFIELDS => [
-				'api_key' => $this->u_get('wapi_api'),
-				'device_key' => $this->u_get('wapi_device'),
-				'destination' => $phone,
-				'message' => $message,
-			],
-		)
-		);
-		$response = curl_exec($curl);
-		curl_close($curl);
+		$body = array(
+          "api_key" => $this->u_get('wapi_api'),
+          "receiver" => $phone,
+          "data" => array("message" => $message)
+        );
+        
+        $curl = curl_init();
+        curl_setopt_array($curl, [
+          CURLOPT_URL => "https://app.wapisender.com/api/send-message",
+          CURLOPT_RETURNTRANSFER => true,
+          CURLOPT_ENCODING => "",
+          CURLOPT_MAXREDIRS => 10,
+          CURLOPT_TIMEOUT => 30,
+          CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+          CURLOPT_CUSTOMREQUEST => "POST",
+          CURLOPT_POSTFIELDS => json_encode($body),
+          CURLOPT_HTTPHEADER => [
+            "Accept: */*",
+            "Content-Type: application/json",
+          ],
+        ]);
+        
+        $response = curl_exec($curl);
+        $err = curl_error($curl);
+        
+        curl_close($curl);
+        
+        if ($err) {
+          echo "cURL Error #:" . $err;
+        } else {
+          echo $response;
+        }
 		sleep(1); #do not delete!
 	}
 

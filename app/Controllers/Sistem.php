@@ -26,7 +26,7 @@ class Sistem extends BaseController
 		curl_setopt($ch, CURLOPT_POST, 1);
 		curl_setopt($ch, CURLOPT_POSTFIELDS, $post_data);
 		$result = curl_exec($ch);
-		echo $result;
+		//echo $result;
 		$result = json_decode($result, true);
 
 		if (count($result['data']) > 20) {
@@ -92,6 +92,8 @@ class Sistem extends BaseController
 
 					}
 				} else {
+				    // off nya issue 
+				    echo "off issue".PHP_EOL;
 					if (count($games) === 1) {
 						if (count($product) === 1) {
 							// Berikan nomor urut untuk merek produk
@@ -111,7 +113,7 @@ class Sistem extends BaseController
 							], $product[0]['id']);
 
 							$counters[$loop['brand']]++;
-							echo $loop['product_name'] . ' Update OFF <br>';
+							echo $loop['product_name'] . ' ' . $loop['buyer_sku_code'] . ' Update OFF <br>';
 
 						}
 					}
