@@ -32,15 +32,20 @@
 
         <style>
             :root {
-                --warna: #120037;
+                /* --warna: #120037;
                 --warna_2: #1A004D;
-                --warna_3: #00396e;
+                --warna_3: #00396e; */
+                --warna: #4C0027;
+                --warna_2: #750550;
+                --warna_3: #980F5A;
                 --text-dark : #CCCCCC;
                 --text-light : #FFFFFF;
                 --link: #A685F5;
-                --success: #FFCC00;
+                --btn-primary: #865BE2;
+                --btn-hover: #FFCC00;
+                --secondary-btn: #FFCC00;
                 --error : #FF4D4D;
-                --secondary-btn: #00C898;
+                --success: #00C898;
             }
 
             .content {
@@ -110,8 +115,8 @@
                 background: #652572;
             }
             .btn-primary {
-                background: var(--warna_3) !important;
-                border-color: var(--warna_3) !important;
+                background: var(--btn-primary) !important;
+                border-color: var(--btn-pri) !important;
             }
             .sidenav {
                 background: var(--warna_2);
@@ -382,9 +387,9 @@
 									   <span class="dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"> 
 									    	<a class="nav-item nav-link" >Kalkulator ML<img src="<?= base_url(); ?>/assets/images/down-arrow.png" alt="" width="15" style="vertical-align:center"></a>
 									    </span>
-									    <div class="dropdown-menu mt-2" aria-labelledby="dropdownMenuButton" style="left: auto;right: 0;box-shadow: none !important;background: var(--warna_1);">
-									        <a class="dropdown-item text-white <?= $menu_active == 'kalkulatorwr' ? 'active' : ''; ?>" href="<?= base_url(); ?>/kalkulatorwr">Kalkulator WR</a>
-									        <a class="dropdown-item text-white <?= $menu_active == 'hpmagicwheel' ? 'active' : ''; ?>" href="<?= base_url(); ?>/hpmagicwheel">HP Magic Wheel</a>
+									    <div class="dropdown-menu mt-2" aria-labelledby="dropdownMenuButton" style="left: auto;right: 0;background: var(--warna_1);">
+									        <a class="dropdown-item text-white <?= $menu_active == 'kalkulatorwr' ? 'active' : ''; ?>" style="background-color:#818FB4;" href="<?= base_url(); ?>/kalkulatorwr">Kalkulator WR</a>
+									        <a class="dropdown-item text-white <?= $menu_active == 'hpmagicwheel' ? 'active' : ''; ?>" style="background-color:#818FB4;" href="<?= base_url(); ?>/hpmagicwheel">HP Magic Wheel</a>
 									    </div>
 								</div>
                                 <a class="nav-item nav-link <?= $menu_active == 'Login' ? 'active' : ''; ?>" href="<?= base_url(); ?>/login">Login</a>
