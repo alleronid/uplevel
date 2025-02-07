@@ -61,6 +61,7 @@
 															<select name="provider" class="form-control">
 																<option value="Manual">Manual</option>
 																<option value="Tripay" >Tripay</option>
+																<option value="Ayolinx" >Ayolinx</option>
 																<option value="Duitku" hidden>Duitku</option>
 																<option value="Xendit" hidden>Xendit</option>
 															</select>

@@ -62,6 +62,7 @@
 															<select name="provider" class="form-control">
 																<option value="Manual" <?= $method['provider'] == 'Manual' ? 'selected' : ''; ?>>Manual</option>
 																<option value="Tripay" <?= $method['provider'] == 'Tripay' ? 'selected' : ''; ?> >Tripay</option>
+																<option value="Tripay" <?= $method['provider'] == 'Ayolinx' ? 'selected' : ''; ?> >Ayolinx</option>
 																<option value="Duitku" <?= $method['provider'] == 'Duitku' ? 'selected' : ''; ?> hidden>Duitku</option>
 																<option value="Xendit" <?= $method['provider'] == 'Xendit' ? 'selected' : ''; ?> hidden>Xendit</option>
 															</select>

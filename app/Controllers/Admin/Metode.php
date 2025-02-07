@@ -7,7 +7,6 @@ use App\Controllers\BaseController;
 class Metode extends BaseController {
 
     public function index() {
-
         if ($this->admin == false) {
             $this->session->setFlashdata('error', 'Silahkan login dahulu');
             return redirect()->to(base_url() . '/admin/login');
