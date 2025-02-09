@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Enums\AyolinxEnums;
 use Exception;
 
 class Ayolinx extends BaseController
@@ -34,43 +35,128 @@ class Ayolinx extends BaseController
     return $base64_signature;
   }
 
-  public function get_token() {
+  public function signatureReq($url, $tokenAccess ,$body = [], $method = 'POST', $client_secret): String
+  {
     $timestamp = date('Y-m-d\TH:i:sP');
+    $hashBody = hash('sha256', json_encode($body));
+    $data = "{$method}:{$url}:{$tokenAccess}:{$hashBody}:{$timestamp}";
+    $signature = base64_encode(hash_hmac('sha512', $data, $client_secret, true));
+    return $signature;
+  }
+
+  public function api($url ,$headers= [], $post =[]){
+    $timestamp = date('Y-m-d\TH:i:sP');
+		$ch = curl_init();
+		$defaultHeaders = array(
+			'Content-Type: application/json',
+      'X-TIMESTAMP: ' . $timestamp,
+		);
+
+    $headers = array_merge($defaultHeaders, $headers);
+
+    $baseUrl =  "https://sandbox.ayolinx.id/$url";
+
+		curl_setopt($ch, CURLOPT_URL, $baseUrl);
+		curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+		curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($post));
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
+		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+		curl_setopt($ch, CURLOPT_TIMEOUT, 0);
+
+		return curl_exec($ch);
+	}
+
+  public function get_token() {
+   try{
     $client_key = $this->M_Base->u_get('ayolinx-key');
     $signature = $this->signature();
+    $header = ['X-CLIENT-KEY: ' . $client_key,
+      'X-SIGNATURE: ' . $signature];
+    $response = $this->api('/v1.0/access-token/b2b', $header);
+    $result = json_decode($response, true);
+    $accessToken = $result["accessToken"] ?? null;
+    return $accessToken;
+   }catch(\Exception $e){
+    return json_encode(['error' => $e]);
+   }
+  }
 
-    $curl = curl_init();
+  public function generateQris(){
+    $url = '/v1.0/qr/qr-mpm-generate';
+    $tokenAccess = $this->get_token();
+    $client_secret = $this->M_Base->u_get('ayolinx-secret');
+    $body = [  
+          "partnerReferenceNo" => "fd3f5af0-af57-4513-95a8-77df45721ed27",
+          "amount" => [
+              "currency" => "IDR",
+              "value" => '100000'
+          ],
+          "additionalInfo" => [
+              "channel" => "BNC_QRIS"
+          ]
+    ];
+    $signature = $this->signatureReq($url, $tokenAccess, $body, 'POST', $client_secret);
+    $header = [
+      'X-SIGNATURE' => $signature,
+      'X-PARTNER-ID' => $this->M_Base->u_get('ayolinx-key'),
+      'X-EXTERNAL-ID' => 418075533589,
+      'Authorization' => 'Bearer '. $tokenAccess
+    ];
 
-    curl_setopt_array($curl, array(
-        CURLOPT_URL => 'https://sandbox.ayolinx.id/v1.0/access-token/b2b',
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HEADER => true,
-        CURLOPT_ENCODING => '',
-        CURLOPT_MAXREDIRS => 10,
-        CURLOPT_TIMEOUT => 0,
-        CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-        CURLOPT_SSL_VERIFYHOST => false,
-        CURLOPT_SSL_VERIFYPEER => false,
-        CURLOPT_CUSTOMREQUEST => 'POST',
-        CURLOPT_POSTFIELDS => json_encode(array(
-            "grant_type" => "client_credentials"
-        )),
-        CURLOPT_HTTPHEADER => array(
-            'Content-Type: application/json',
-            'X-TIMESTAMP: ' . $timestamp,
-            'X-CLIENT-KEY: ' . $client_key,
-            'X-SIGNATURE: ' . $signature
-        ),
-    ));
-    $response = curl_exec($curl);
-    if ($response === false) {
-        echo 'cURL Error: ' . curl_error($curl);
-    } else {
-        echo $response;
-    }
-    curl_close($curl);
+    $response = $this->api($url, $header, $body);
     return $response;
+  }
+
+  public function queryQris()
+  {
+    $method = "POST";
+    $tokenAccess = $this->get_token();
+    $url = '/v1.0/qr/qr-mpm-query';
+    $client_secret = $this->M_Base->u_get('ayolinx-secret');
+    $body = [
+        'originalPartnerReferenceNo' => '',
+        'additionalInfo' => [
+          'channel' => AyolinxEnums::QRIS
+        ]
+    ];
+    $signature = $this->signatureReq($url, $tokenAccess, $body, $method, $client_secret);
+    $header = [
+      'X-SIGNATURE' => $signature,
+      'X-PARTNER-ID' => $this->M_Base->u_get('ayolinx-key'),
+      'X-EXTERNAL-ID' => 418075533589,
+      'Authorization' => 'Bearer '. $tokenAccess
+    ];
+
+    $response = $this->api($url, $header, $body);
+    return $response; 
+  }
+
+  public function cancelQris()
+  {
+    $method = "POST";
+    $tokenAccess = $this->get_token();
+    $url = '/v1.0/qr/qr-mpm-cancel';
+    $client_secret = $this->M_Base->u_get('ayolinx-secret');
+    $body = [
+        'originalPartnerReferenceNo' => '',
+        'additionalInfo' => [
+          'channel' => AyolinxEnums::QRIS
+        ]
+    ];
+    $signature = $this->signatureReq($url, $tokenAccess, $body, $method, $client_secret);
+    $header = [
+      'X-SIGNATURE' => $signature,
+      'X-PARTNER-ID' => $this->M_Base->u_get('ayolinx-key'),
+      'X-EXTERNAL-ID' => 418075533589,
+      'Authorization' => 'Bearer '. $tokenAccess
+    ];
+
+    $response = $this->api($url, $header, $body);
+    return $response; 
   }
   
 }
