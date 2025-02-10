@@ -7,6 +7,7 @@ use Exception;
 
 class Ayolinx extends BaseController
 {
+
   // public function create_private(){
   //   $config = [
   //     "private_key_bits" => 2048,
@@ -19,7 +20,8 @@ class Ayolinx extends BaseController
   //   file_put_contents('private_key.pem', $privateKey);
   // }
 
-  public function signature(){
+  public function signature()
+  {
     $timestamp = date('Y-m-d\TH:i:sP');
     $clientKey = $this->M_Base->u_get('ayolinx-key');
     $requestTimestamp = $timestamp;
@@ -142,7 +144,7 @@ class Ayolinx extends BaseController
     $url = '/v1.0/qr/qr-mpm-cancel';
     $client_secret = $this->M_Base->u_get('ayolinx-secret');
     $body = [
-        'originalPartnerReferenceNo' => '',
+        'originalPartnerReferenceNo' => 'uihfuehfuiefuinefiefueu',
         'additionalInfo' => [
           'channel' => AyolinxEnums::QRIS
         ]
@@ -158,5 +160,4 @@ class Ayolinx extends BaseController
     $response = $this->api($url, $header, $body);
     return $response; 
   }
-  
 }
