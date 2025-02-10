@@ -160,4 +160,42 @@ class Ayolinx extends BaseController
     $response = $this->api($url, $header, $body);
     return $response; 
   }
+
+  public function walletDana(){
+    $method = 'POST';
+    $url = '/direct-debit/core/v1/debit/payment-host-to-host';
+    $client_secret = $this->M_Base->u_get('ayolinx-secret');
+    $tokenAccess = $this->get_token();
+    $body = [
+        "partnerReferenceNo" => "fd3f5af0-af57-4513-95a8-77df45721edw",
+        "validUpTo" => "1746249942",
+        "amount" => [
+            "currency" => "IDR",
+            "value" => "30.00"
+        ],
+        "urlParams" => [
+            [
+                "type" => "PAY_RETURN",
+                "url" => "https://dev-payment.ayolinx.id/status?h=f13ce04d-34c5-4a03-ac46-d608cab468a2"
+        ],
+            [
+                "type" => "NOTIFICATION",
+                "url" => "https://dev-payment.ayolinx.id/status?h=f13ce04d-34c5-4a03-ac46-d608cab468a2"
+        ]
+        ],
+        "additionalInfo" => [
+            "channel" => AyolinxEnums::EWALLET
+          ]
+        ];
+      $signature = $this->signatureReq($url, $tokenAccess, $body,$method, $client_secret);
+      $header = [
+        'X-SIGNATURE' => $signature,
+        'X-PARTNER-ID' => $this->M_Base->u_get('ayolinx-key'),
+        'X-EXTERNAL-ID' => 418075533589,
+        'Authorization' => 'Bearer '. $tokenAccess
+      ];
+
+      $response = $this->api($url, $header, $body);
+      return $response;
+  }
 }
