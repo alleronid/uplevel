@@ -11,7 +11,7 @@ class Ayolinx extends BaseController
   private $timestamp;
 
   public function __construct() {
-    $this->timestamp = date('Y-m-d\TH:i:sP');
+    $this->timestamp = date('c');
   }
   // public function create_private(){
   //   $config = [
@@ -27,9 +27,8 @@ class Ayolinx extends BaseController
 
   public function signature()
   {
-    $timestamp = date('Y-m-d\TH:i:sP');
     $clientKey = $this->M_Base->u_get('ayolinx-key');
-    $requestTimestamp = $timestamp;
+    $requestTimestamp = $this->timestamp;
     $string_to_sign = $clientKey . '|' . $requestTimestamp;
     $private_key = file_get_contents('private_key.pem');
 
@@ -42,19 +41,8 @@ class Ayolinx extends BaseController
     return $base64_signature;
   }
 
-  public function signatureReq($url, $tokenAccess ,$body = [], $method = 'POST', $client_secret): String
-  {
-    $timestamp = $this->timestamp;
-    echo "timestamp signature : ". $timestamp;
-    $hashBody = hash('sha256', json_encode($body));
-    $data = "{$method}:{$url}:{$tokenAccess}:{$hashBody}:{$timestamp}";
-    $signature = base64_encode(hash_hmac('sha512', $data, $client_secret, true));
-    return $signature;
-  }
-
   public function api($url ,$headers= [], $post =[]){
     $timestamp = $this->timestamp;
-    echo "timestamp base : ". $timestamp;
 		$ch = curl_init();
 		$defaultHeaders = array(
 			'Content-Type: application/json',
@@ -62,13 +50,12 @@ class Ayolinx extends BaseController
 		);
 
     $headers = array_merge($defaultHeaders, $headers);
-
-    $baseUrl =  "https://sandbox.ayolinx.id$url";
+    $baseUrl =  "https://sandbox.ayolinx.id".$url;
 
 		curl_setopt($ch, CURLOPT_URL, $baseUrl);
 		curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
-		curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($post));
+		curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($post, JSON_UNESCAPED_SLASHES));
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
 		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
@@ -94,78 +81,58 @@ class Ayolinx extends BaseController
    }
   }
 
+  public function base_interface($signature, $timestamp, $token, $url, $post){
+    $curl = curl_init();
+
+    curl_setopt_array($curl, array(
+      CURLOPT_URL => 'https://sandbox.ayolinx.id'.$url,
+      CURLOPT_RETURNTRANSFER => true,
+      CURLOPT_ENCODING => '',
+      CURLOPT_MAXREDIRS => 10,
+      CURLOPT_TIMEOUT => 0,
+      CURLOPT_FOLLOWLOCATION => true,
+      CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+      CURLOPT_CUSTOMREQUEST => 'POST',
+      CURLOPT_POSTFIELDS =>json_encode($post),
+      CURLOPT_HTTPHEADER => array(
+          'X-TIMESTAMP: '. $timestamp,
+          'X-SIGNATURE:'. $signature,
+          'X-PARTNER-ID: CKSandbox-90083f51-98e0-4425-bc7b-776a2eeb5fb7',
+          'X-EXTERNAL-ID:'. $this->randomNumber() ,
+          'Authorization: Bearer '. $token,
+          'Content-Type: application/json'
+      ),
+    ));
+
+    $response = curl_exec($curl);
+
+    curl_close($curl);
+    echo $response;
+  }
+
   public function generateQris(){
-    $url = '/v1.0/qr/qr-mpm-generate';
-    $tokenAccess = $this->get_token();
-    $client_secret = $this->M_Base->u_get('ayolinx-secret');
+    $timestamp = date('c');
+    $method = 'POST';
+    $urlSignature = "/v1.0/qr/qr-mpm-generate";
+    $token = $this->get_token();
+    $client_secret = 'SKSandbox-c2382b29-2395-4002-9ac5-fee6a6bdc52e';
     $body = [  
-          "partnerReferenceNo" => "fd3f5af0-af57-4513-95a8-77df45721ed27",
-          "amount" => [
-              "currency" => "IDR",
-              "value" => '100000'
-          ],
-          "additionalInfo" => [
-              "channel" => "BNC_QRIS"
-          ]
+      'partnerReferenceNo' => 'fd3f5af0-af57-4513-95a8-77df45721ed27',
+      'amount' => [
+          'currency' => 'IDR',
+          'value' => '100000.00'
+      ],
+      'additionalInfo' => [
+          'channel' => 'BNC_QRIS'
+      ]
     ];
-    $signature = $this->signatureReq($url, $tokenAccess, $body, 'POST', $client_secret);
-    $header = [
-      'X-SIGNATURE' => $signature,
-      'X-PARTNER-ID' => $this->M_Base->u_get('ayolinx-key'),
-      'X-EXTERNAL-ID' => 123414141131,
-      'Authorization' => 'Bearer '. $tokenAccess
-    ];
+    $hash = hash('sha256', json_encode($body));
+    $hexEncodedHash = strtolower($hash);
+    $data = "{$method}:{$urlSignature}:{$token}:{$hexEncodedHash}:{$timestamp}";  
+    $signature = base64_encode(hash_hmac('sha512', $data, $client_secret, true));
 
-    $response = $this->api($url, $header, $body);
+    $response = $this->base_interface($signature, $timestamp, $token, $urlSignature, $body);
     return $response;
-  }
-
-  public function queryQris()
-  {
-    $method = "POST";
-    $tokenAccess = $this->get_token();
-    $url = '/v1.0/qr/qr-mpm-query';
-    $client_secret = $this->M_Base->u_get('ayolinx-secret');
-    $body = [
-        'originalPartnerReferenceNo' => '',
-        'additionalInfo' => [
-          'channel' => AyolinxEnums::QRIS
-        ]
-    ];
-    $signature = $this->signatureReq($url, $tokenAccess, $body, $method, $client_secret);
-    $header = [
-      'X-SIGNATURE' => $signature,
-      'X-PARTNER-ID' => $this->M_Base->u_get('ayolinx-key'),
-      'X-EXTERNAL-ID' => 418075533589,
-      'Authorization' => 'Bearer '. $tokenAccess
-    ];
-
-    $response = $this->api($url, $header, $body);
-    return $response; 
-  }
-
-  public function cancelQris()
-  {
-    $method = "POST";
-    $tokenAccess = $this->get_token();
-    $url = '/v1.0/qr/qr-mpm-cancel';
-    $client_secret = $this->M_Base->u_get('ayolinx-secret');
-    $body = [
-        'originalPartnerReferenceNo' => 'uihfuehfuiefuinefiefueu',
-        'additionalInfo' => [
-          'channel' => AyolinxEnums::QRIS
-        ]
-    ];
-    $signature = $this->signatureReq($url, $tokenAccess, $body, $method, $client_secret);
-    $header = [
-      'X-SIGNATURE' => $signature,
-      'X-PARTNER-ID' => $this->M_Base->u_get('ayolinx-key'),
-      'X-EXTERNAL-ID' => 418075533589,
-      'Authorization' => 'Bearer '. $tokenAccess
-    ];
-
-    $response = $this->api($url, $header, $body);
-    return $response; 
   }
 
   public function walletDana(){
@@ -173,27 +140,7 @@ class Ayolinx extends BaseController
     $url = '/direct-debit/core/v1/debit/payment-host-to-host';
     $client_secret = $this->M_Base->u_get('ayolinx-secret');
     $tokenAccess = $this->get_token();
-    $body = [
-        "partnerReferenceNo" => "fd3f5af0-af57-4513-95a8-77df45721edw",
-        "validUpTo" => "1746249942",
-        "amount" => [
-            "currency" => "IDR",
-            "value" => "30.00"
-        ],
-        "urlParams" => [
-            [
-                "type" => "PAY_RETURN",
-                "url" => "https://dev-payment.ayolinx.id/status?h=f13ce04d-34c5-4a03-ac46-d608cab468a2"
-        ],
-            [
-                "type" => "NOTIFICATION",
-                "url" => "https://dev-payment.ayolinx.id/status?h=f13ce04d-34c5-4a03-ac46-d608cab468a2"
-        ]
-        ],
-        "additionalInfo" => [
-            "channel" => AyolinxEnums::EWALLET
-          ]
-        ];
+    $body = '{"partnerReferenceNo":"fd3f5af0-af57-4513-95a8-77df45721edw","validUpTo":"1746249942","amount":{"currency":"IDR","value":"30.00"},"urlParams":[{"type":"PAY_RETURN","url":"https://dev-payment.ayolinx.id/status?h=f13ce04d-34c5-4a03-ac46-d608cab468a2"},{"type":"NOTIFICATION","url":"https://dev-payment.ayolinx.id/status?h=f13ce04d-34c5-4a03-ac46-d608cab468a2"}],"additionalInfo":{"channel":AyolinxEnums::EWALLET}}';
       $signature = $this->signatureReq($url, $tokenAccess, $body,$method, $client_secret);
       $header = [
         'X-SIGNATURE' => $signature,
@@ -212,27 +159,141 @@ class Ayolinx extends BaseController
     $client_secret = $this->M_Base->u_get('ayolinx-secret');
     $tokenAccess = $this->get_token();
 
-    $body = [
-      "partnerServiceId"=> AyolinxEnums::BNI_SB,
-      "customerNo"=> "30000000000000000001",
-      "virtualAccountNo"=> "4339382374532139",
-      "virtualAccountName"=> "Customer Name",
-      "trxId"=> "123321123321",
-      "virtualAccountTrxType"=> "C",
-      "totalAmount"=> [
-        "value"=> "11500.00",
-        "currency"=> "IDR"
-        ],
-      "additionalInfo" => [
-        "channel"=>  "VIRTUAL_ACCOUNT_BCA"
-        ]
-      ];
-      $signature = $this->signatureReq($url, $tokenAccess, $body,$method, $client_secret);
+    $body = '{"partnerServiceId":AyolinxEnums::BNI_SB,"customerNo":"30000000000000000001","virtualAccountNo":"4339382374532139","virtualAccountName":"Customer Name","trxId":"123321123321","virtualAccountTrxType":"C","totalAmount":{"value":"11500.00","currency":"IDR"},"additionalInfo":{"channel":"VIRTUAL_ACCOUNT_BCA"}}';
+    $signature = $this->signatureReq($url, $tokenAccess, $body,$method, $client_secret);
       $header = [
         'X-SIGNATURE' => $signature,
         'X-PARTNER-ID' => $this->M_Base->u_get('ayolinx-key'),
         'X-EXTERNAL-ID' => 418075533589,
         'Authorization' => 'Bearer '. $tokenAccess
       ];
+
+      $response = $this->api($url, $header, $body);
+      return $response;
+  }
+
+  public function generateTest(){
+    $timestamp = date('c');
+    $method = 'POST';
+    $urlSignature = "/v1.0/qr/qr-mpm-generate";
+    $token = $this->get_token();
+    $client_secret = 'SKSandbox-c2382b29-2395-4002-9ac5-fee6a6bdc52e';
+    $body = [  
+          "partnerReferenceNo" => "fd3f5af0-af57-4513-95a8-77df45721ed27",
+          "amount" => [
+              "currency" => "IDR",
+              "value" => "100000.00"
+          ],
+          "additionalInfo" => [
+              "channel" => "BNC_QRIS"
+          ]
+    ];
+    $requestBody = '{"partnerReferenceNo":"fd3f5af0-af57-4513-95a8-77df45721ed21","amount":{"currency":"IDR","value":"10001.00"},"additionalInfo":{"channel":"BNC_QRIS"}}'; 
+    $hash = hash('sha256', $requestBody);
+    $hexEncodedHash = strtolower($hash);
+    $data = "{$method}:{$urlSignature}:{$token}:{$hexEncodedHash}:{$timestamp}";  
+    $signature = base64_encode(hash_hmac('sha512', $data, $client_secret, true));
+    
+    $curl = curl_init();
+
+    curl_setopt_array($curl, array(
+      CURLOPT_URL => 'https://sandbox.ayolinx.id/v1.0/qr/qr-mpm-generate',
+      CURLOPT_RETURNTRANSFER => true,
+      CURLOPT_ENCODING => '',
+      CURLOPT_MAXREDIRS => 10,
+      CURLOPT_TIMEOUT => 0,
+      CURLOPT_FOLLOWLOCATION => true,
+      CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+      CURLOPT_CUSTOMREQUEST => 'POST',
+      CURLOPT_POSTFIELDS =>'{
+        "partnerReferenceNo":"fd3f5af0-af57-4513-95a8-77df45721ed21",
+        "amount": {
+            "currency": "IDR",
+            "value":"10001.00"
+        },
+        "additionalInfo":{
+            "channel":"BNC_QRIS"
+        }
+    }',
+      CURLOPT_HTTPHEADER => array(
+          'X-TIMESTAMP: '. $this->timestamp,
+          'X-SIGNATURE:'. $signature,
+          'X-PARTNER-ID: CKSandbox-90083f51-98e0-4425-bc7b-776a2eeb5fb7',
+          'X-EXTERNAL-ID:'. $this->randomNumber() ,
+          'Authorization: Bearer '. $token,
+          'Content-Type: application/json'
+      ),
+    ));
+
+    $response = curl_exec($curl);
+
+    curl_close($curl);
+    echo $response;
+  }
+
+  public function generateTestDana(){
+    $method = 'POST';
+    $urlSignature = "/direct-debit/core/v1/debit/payment-host-to-host";
+    $token = $this->get_token();
+    $timestamp = date('c');
+    $client_secret = 'SKSandbox-c2382b29-2395-4002-9ac5-fee6a6bdc52e';
+    $requestBody = '{"partnerReferenceNo":"fd3f5af0-af57-4513-95a8-77df45721edw","validUpTo":"1746249942","amount":{"currency":"IDR","value":"300000.00"},"urlParams":[{"type":"PAY_RETURN","url":"https://dev-payment.ayolinx.id/status?h=f13ce04d-34c5-4a03-ac46-d608cab468a2"},{"type":"NOTIFICATION","url":"https://dev-payment.ayolinx.id/status?h=f13ce04d-34c5-4a03-ac46-d608cab468a2"}],"additionalInfo":{"channel":"EMONEY_DANA_SNAP"}}'; 
+    $hash = hash('sha256', $requestBody);
+    $hexEncodedHash = strtolower($hash);
+    $data = "{$method}:{$urlSignature}:{$token}:{$hexEncodedHash}:{$timestamp}";  
+    $signature = base64_encode(hash_hmac('sha512', $data, $client_secret, true));
+    $curl = curl_init();
+
+    curl_setopt_array($curl, array(
+      CURLOPT_URL => 'https://sandbox.ayolinx.id/direct-debit/core/v1/debit/payment-host-to-host',
+      CURLOPT_RETURNTRANSFER => true,
+      CURLOPT_ENCODING => '',
+      CURLOPT_MAXREDIRS => 10,
+      CURLOPT_TIMEOUT => 0,
+      CURLOPT_FOLLOWLOCATION => true,
+      CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+      CURLOPT_CUSTOMREQUEST => 'POST',
+      CURLOPT_POSTFIELDS =>'{
+          "partnerReferenceNo": "fd3f5af0-af57-4513-95a8-77df45721edw",
+          "validUpTo": "1746249942",
+          "amount": {
+              "currency": "IDR",
+              "value":"300000.00"
+          },
+          "urlParams":[
+              {
+                  "type":"PAY_RETURN",
+                  "url":"https://dev-payment.ayolinx.id/status?h=f13ce04d-34c5-4a03-ac46-d608cab468a2"
+              },
+              {
+                  "type":"NOTIFICATION",
+                  "url":"https://dev-payment.ayolinx.id/status?h=f13ce04d-34c5-4a03-ac46-d608cab468a2"
+              }
+          ],
+          "additionalInfo":{
+              "channel":"EMONEY_DANA_SNAP"
+          }
+        
+      }',
+      CURLOPT_HTTPHEADER => array(
+          'X-TIMESTAMP: '. $this->timestamp,
+          'X-SIGNATURE:'. $signature,
+          'X-PARTNER-ID: CKSandbox-90083f51-98e0-4425-bc7b-776a2eeb5fb7',
+          'X-EXTERNAL-ID:'. $this->randomNumber() ,
+          'Authorization: Bearer '. $token,
+          'Content-Type: application/json'
+      ),
+    ));
+
+    $response = curl_exec($curl);
+
+    curl_close($curl);
+    echo $response;
+  }
+
+  public function randomNumber(){
+    $number = rand(11111111111,99999999999);
+    return $number;
+
   }
 }

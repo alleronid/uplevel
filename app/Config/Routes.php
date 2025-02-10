@@ -118,6 +118,8 @@ $routes->match(['get', 'post'], '/user/riwayat', 'User::riwayat');
 
 $routes->match(['get', 'post'], '/sistem/callback/(:any)', 'Sistem::callback/$1');
 
+$routes->match(['get', 'post'], '/generate-pembayaran', 'Ayolinx::generateQris');
+
 /*
  * --------------------------------------------------------------------
  * Additional Routing

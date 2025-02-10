@@ -117,6 +117,11 @@ class M_Base extends Model
 			return $this->db->table($table)->where($data)->get()->getResultArray();
 		}
 	}
+	
+	// public function method_where($table, $data){
+	// 	return $this->db-tabl
+	// }
+
 	public function data_update($table, $data, $id)
 	{
 		return $this->db->table($table)->set($data)->where('id', $id)->update();

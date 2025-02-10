@@ -10,7 +10,7 @@
         <meta name="description" content="<?= strip_tags($web['description']); ?>">
         <meta name="keywords" content="<?= strip_tags($web['keywords']); ?>">
 
-        <link rel="shortcut icon" href="<?= base_url(); ?>/assets/images/alleron-logo.png">
+        <link rel="shortcut icon" href="<?= base_url(); ?>/assets/images/alleron-logo1.png">
         <link rel="stylesheet" href="<?= base_url(); ?>/assets/plugins/simplebar/css/simplebar.css">
         <link rel="stylesheet" href="<?= base_url(); ?>/assets/css/bootstrap.min.css">
         <link rel="stylesheet" href="<?= base_url(); ?>/assets/plugins/bootstrap-datatable/css/dataTables.bootstrap4.min.css">
@@ -116,7 +116,7 @@
                 background: var(--warna_2);
             }
             .radio-nominal + label, .radio-nominale + label {
-                background: #001d38;  
+                background: #303030;  
                 border: none !important;
             }
             .radio-nominale:checked + label, .radio-nominal:checked + label {
@@ -399,7 +399,6 @@
                                 <a class="nav-item nav-link <?= $menu_active == 'Home' ? 'active' : ''; ?>" href="<?= base_url(); ?>">Home</a>
                                 <a class="nav-item nav-link <?= $menu_active == 'Cek' ? 'active' : ''; ?>" href="<?= base_url(); ?>/payment">Cek Pesanan</a>
                                 <a class="nav-item nav-link <?= $menu_active == 'API' ? 'active' : ''; ?>" href="<?= base_url(); ?>/api/docs" hidden>API</a>
-                                <a class="nav-item nav-link <?= $menu_active == 'Price' ? 'active' : ''; ?>" href="<?= base_url(); ?>/price">Daftar Harga</a>
                                 <a class="nav-item nav-link <?= $menu_active == 'Method' ? 'active' : ''; ?>" href="<?= base_url(); ?>/method"hidden>Metode</a>
                                 <div class="dropdown">
                                     <style>

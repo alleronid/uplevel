@@ -270,8 +270,8 @@ button.accordion-button {
                             <div class="accordion mb-3 mt-3 boks" id="bbank">
                                 <?php
                                 $count = 0; foreach ($accordion_data as $category => $methods):
-                                    $count++;
-                                    ?>
+                                $count++;
+                                ?>
 
                                 <div class="accordion-item mb-3">
                                     <h2 class="accordion-header mb-0">

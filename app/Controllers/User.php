@@ -141,6 +141,7 @@ class User extends BaseController {
                         return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
                     } else {
                         $method = $this->M_Base->data_where('method', 'id', $data_post['method']);
+                        //  $all_method = $this->M_Base->data_where('method', 'status', 'On');
 
                         if (count($method) === 1) {
                             if ($method[0]['status'] == 'On') {
@@ -240,7 +241,7 @@ class User extends BaseController {
 
                 $data = array_merge($this->base_data, [
                     'title' => 'Top Up',
-                    'method' => $this->M_Base->all_data('method'),
+                    'method' => $this->M_Base->data_where('method', 'status', 'On'),
                 ]);
 
                 return view('User/Topup/index', $data);
