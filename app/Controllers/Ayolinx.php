@@ -8,6 +8,11 @@ use Exception;
 class Ayolinx extends BaseController
 {
 
+  private $timestamp;
+
+  public function __construct() {
+    $this->timestamp = date('Y-m-d\TH:i:sP');
+  }
   // public function create_private(){
   //   $config = [
   //     "private_key_bits" => 2048,
@@ -39,7 +44,8 @@ class Ayolinx extends BaseController
 
   public function signatureReq($url, $tokenAccess ,$body = [], $method = 'POST', $client_secret): String
   {
-    $timestamp = date('Y-m-d\TH:i:sP');
+    $timestamp = $this->timestamp;
+    echo "timestamp signature : ". $timestamp;
     $hashBody = hash('sha256', json_encode($body));
     $data = "{$method}:{$url}:{$tokenAccess}:{$hashBody}:{$timestamp}";
     $signature = base64_encode(hash_hmac('sha512', $data, $client_secret, true));
@@ -47,7 +53,8 @@ class Ayolinx extends BaseController
   }
 
   public function api($url ,$headers= [], $post =[]){
-    $timestamp = date('Y-m-d\TH:i:sP');
+    $timestamp = $this->timestamp;
+    echo "timestamp base : ". $timestamp;
 		$ch = curl_init();
 		$defaultHeaders = array(
 			'Content-Type: application/json',
@@ -56,7 +63,7 @@ class Ayolinx extends BaseController
 
     $headers = array_merge($defaultHeaders, $headers);
 
-    $baseUrl =  "https://sandbox.ayolinx.id/$url";
+    $baseUrl =  "https://sandbox.ayolinx.id$url";
 
 		curl_setopt($ch, CURLOPT_URL, $baseUrl);
 		curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
@@ -105,7 +112,7 @@ class Ayolinx extends BaseController
     $header = [
       'X-SIGNATURE' => $signature,
       'X-PARTNER-ID' => $this->M_Base->u_get('ayolinx-key'),
-      'X-EXTERNAL-ID' => 418075533589,
+      'X-EXTERNAL-ID' => 123414141131,
       'Authorization' => 'Bearer '. $tokenAccess
     ];
 
@@ -191,11 +198,41 @@ class Ayolinx extends BaseController
       $header = [
         'X-SIGNATURE' => $signature,
         'X-PARTNER-ID' => $this->M_Base->u_get('ayolinx-key'),
-        'X-EXTERNAL-ID' => 418075533589,
+        'X-EXTERNAL-ID' => '1291864834343',
         'Authorization' => 'Bearer '. $tokenAccess
       ];
 
       $response = $this->api($url, $header, $body);
       return $response;
+  }
+
+  public function createVA(){
+    $method = 'POST';
+    $url = '/direct-debit/core/v1/debit/payment-host-to-host';
+    $client_secret = $this->M_Base->u_get('ayolinx-secret');
+    $tokenAccess = $this->get_token();
+
+    $body = [
+      "partnerServiceId"=> AyolinxEnums::BNI_SB,
+      "customerNo"=> "30000000000000000001",
+      "virtualAccountNo"=> "4339382374532139",
+      "virtualAccountName"=> "Customer Name",
+      "trxId"=> "123321123321",
+      "virtualAccountTrxType"=> "C",
+      "totalAmount"=> [
+        "value"=> "11500.00",
+        "currency"=> "IDR"
+        ],
+      "additionalInfo" => [
+        "channel"=>  "VIRTUAL_ACCOUNT_BCA"
+        ]
+      ];
+      $signature = $this->signatureReq($url, $tokenAccess, $body,$method, $client_secret);
+      $header = [
+        'X-SIGNATURE' => $signature,
+        'X-PARTNER-ID' => $this->M_Base->u_get('ayolinx-key'),
+        'X-EXTERNAL-ID' => 418075533589,
+        'Authorization' => 'Bearer '. $tokenAccess
+      ];
   }
 }
