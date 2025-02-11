@@ -314,6 +314,18 @@ class Ayolinx extends BaseController
   public function randomNumber(){
     $number = rand(11111111111,99999999999);
     return $number;
+  }
 
+  public function generateQriss(){
+    $body = [
+      "partnerReferenceNo" => '12345678989',
+      "amount" => [
+          "currency" => "IDR",
+          "value" => '13131313'
+      ],
+      "additionalInfo" => [
+          "channel" => AyolinxEnums::QRIS
+      ]
+    ];
   }
 }

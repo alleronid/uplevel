@@ -1122,7 +1122,7 @@ class Games extends BaseController
                                                 if ($result) {
                                                     if ($result['responseCode'] == 2004700) {
                                                         $redirect = true;
-                                                        $payment_code = $result['qrUrl'];
+                                                        $payment_code = $result['qrContent'];
                                                     } else {
                                                         $this->session->setFlashdata('error', 'Result : ' . $result['message']);
                                                         return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));

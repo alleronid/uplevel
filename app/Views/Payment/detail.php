@@ -91,7 +91,7 @@
 									<?php if ($orders['payment_type'] == 'QRIS' && $orders['payment_gateway'] == 'Ayolinx'): ?>
 
         									<div class="pb-4"><b> SCAN QR CODE dibawah ini </b><br>
-        									     <img src="<?= $orders['payment_code']; ?>" width="320" height="350" class="mt-3" alt="" title="" />
+        									     <img src="https://api.qrserver.com/v1/create-qr-code/?data=<?= $orders['payment_code']; ?>&size=200x200" class="mt-3	" alt="" title="" />
         									</div>
         									
 									<?php endif ?>
@@ -99,7 +99,7 @@
 									<?php if (filter_var($orders['payment_code'], FILTER_VALIDATE_URL)): ?>
     									<?php if ( in_array($orders['method_code'], array('QRIS')) ) : ?>
     								    <div class="pb-4"><b> SCAN QR CODE dibawah ini </b><br>
-    									     <img src="https://sit-marketing-img.bankneo.co.id/qris/merchant/img/eDrZbLPLulQGQ_H_1sbbBw-aWd4BTD_qha9qBtl1EI.png" width="20px" height="20" alt="" title="" />
+    									     <img src="<?= $orders['payment_code']; ?>" width="20px" height="20" alt="" title="" />
     									</div>
     									<?php else: ?>
     									<div class="pb-4"> Klik tombol untuk melakukan Pembayaran <br>
