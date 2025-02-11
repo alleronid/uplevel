@@ -110,22 +110,13 @@ class Ayolinx extends BaseController
     return $response;
   }
 
-  public function generateQris(){
+  public function generateQris($data = []){
     $timestamp = date('c');
     $method = 'POST';
     $urlSignature = "/v1.0/qr/qr-mpm-generate";
     $token = $this->get_token();
     $client_secret = 'SKSandbox-c2382b29-2395-4002-9ac5-fee6a6bdc52e';
-    $body = [  
-      'partnerReferenceNo' => 'fd3f5af0-af57-4513-95a8-77df45721ed27',
-      'amount' => [
-          'currency' => 'IDR',
-          'value' => '100000.00'
-      ],
-      'additionalInfo' => [
-          'channel' => 'BNC_QRIS'
-      ]
-    ];
+    $body = $data;
     $hash = hash('sha256', json_encode($body));
     $hexEncodedHash = strtolower($hash);
     $data = "{$method}:{$urlSignature}:{$token}:{$hexEncodedHash}:{$timestamp}";  

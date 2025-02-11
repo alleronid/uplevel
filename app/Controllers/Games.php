@@ -2,8 +2,21 @@
 
 namespace App\Controllers;
 
+use App\Services\AyolinxService;
+use App\Enums\AyolinxEnums;
+use Exception;
+
 class Games extends BaseController
 {
+    // protected $ayolinxService;
+    private $timestamp;
+
+
+    public function __construct()
+    {
+        // $this->ayolinxService = new AyolinxService();
+        $this->timestamp = date('c');
+    }
 
     public function index($slug = null)
     {
@@ -937,9 +950,6 @@ class Games extends BaseController
                                             $level = 'Members';
                                             $product_price = $product[0]['price'];
 
-
-
-
                                             if ($this->users == false) {
                                                 $username = '';
                                                 $username_tripay = 'Default';
@@ -954,7 +964,6 @@ class Games extends BaseController
                                                     } else {
                                                         $product_price = $product[0]['price_silver'];
                                                     }
-
                                                 } else if ($level == 'Gold') {
 
                                                     if ($product[0]['price_gold'] == 0 or $product[0]['price_gold'] < 500 or empty($product[0]['price_gold'])) {
@@ -962,10 +971,8 @@ class Games extends BaseController
                                                     } else {
                                                         $product_price = $product[0]['price_gold'];
                                                     }
-
                                                 } else if ($level == 'Member') {
                                                     $product_price = $product[0]['price'];
-
                                                 } else {
                                                     $product_price = $product[0]['price'];
                                                 }
@@ -982,8 +989,6 @@ class Games extends BaseController
 
                                             $price = $product_price;
 
-                                            ///
-
                                             if ($this->M_Base->u_get('pay_balance') == 'Y') {
 
                                                 $level = $this->users['level'];
@@ -996,7 +1001,6 @@ class Games extends BaseController
                                                     } else {
                                                         $product_price = $product[0]['price_silver'];
                                                     }
-
                                                 } else if ($level == 'Gold') {
 
                                                     if ($product[0]['price_gold'] == 0 or empty($product[0]['price_gold'])) {
@@ -1004,18 +1008,13 @@ class Games extends BaseController
                                                     } else {
                                                         $product_price = $product[0]['price_gold'];
                                                     }
-
                                                 } else if ($level == 'Member') {
 
                                                     $product_price = $product[0]['price'];
-
                                                 } else {
                                                     $product_price = $product[0]['price'];
                                                 }
-
                                             }
-
-                                            ///
 
                                             if ($joki) {
                                                 $price = $price * $user_id['jumlah_star_poin'];
@@ -1081,8 +1080,6 @@ class Games extends BaseController
 
                                                                 $price -= $diskon;
                                                                 $price += $uniq;
-
-
                                                             } else {
                                                                 $this->session->setFlashdata('error', 'Voucher tidak dapat digunakan untuk nominal ini');
                                                                 return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
@@ -1101,75 +1098,39 @@ class Games extends BaseController
                                             $fee = 0;
                                             $fee = ceil($fee);
                                             $price = ceil($price);
+                                            if ($method[0]['provider'] == 'Ayolinx') {
 
+                                                if (strcasecmp($method[0]['method'], 'QRIS') == 0) {
+                                                    $price = round(($product_price * 1.007) + 800);
+                                                } elseif (strcasecmp($method[0]['method'], 'DANA') == 0) {
+                                                    $price = ceil($product_price * 1.0167);
+                                                }
 
-                                            if ($method[0]['provider'] == 'Tripay') {
-
-                                                $data = [
-                                                    'method' => $method[0]['code'],
-                                                    'merchant_ref' => $order_id,
-                                                    'amount' => $price,
-                                                    'customer_name' => $username_tripay,
-                                                    'customer_email' => 'email@domain.com',
-                                                    'customer_phone' => $data_post['wa'],
-                                                    'order_items' => [
-                                                        [
-                                                            'sku' => $product[0]['sku'],
-                                                            'name' => $product[0]['product'],
-                                                            'price' => $price,
-                                                            'quantity' => 1,
-                                                        ]
+                                                $body = [
+                                                    "partnerReferenceNo" => $order_id,
+                                                    "amount" => [
+                                                        "currency" => "IDR",
+                                                        "value" => $price
                                                     ],
-                                                    'return_url' => base_url() . '/payment/' . $order_id,
-                                                    // url untuk redirect
-                                                    'expired_time' => (time() + (24 * 60 * 60)),
-                                                    // 24 jam
-                                                    'signature' => hash_hmac('sha256', $this->M_Base->u_get('tripay-merchant') . $order_id . $price, $this->M_Base->u_get('tripay-private'))
+                                                    "additionalInfo" => [
+                                                        "channel" => AyolinxEnums::QRIS
+                                                    ]
                                                 ];
 
-                                                $curl = curl_init();
-
-                                                curl_setopt_array($curl, [
-                                                    CURLOPT_FRESH_CONNECT => true,
-                                                    CURLOPT_URL => 'https://tripay.co.id/api/transaction/create',
-                                                    CURLOPT_RETURNTRANSFER => true,
-                                                    CURLOPT_HEADER => false,
-                                                    CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . $this->M_Base->u_get('tripay-key')],
-                                                    CURLOPT_FAILONERROR => false,
-                                                    CURLOPT_POST => true,
-                                                    CURLOPT_POSTFIELDS => http_build_query($data),
-                                                    CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4
-                                                ]);
-
-                                                $result = curl_exec($curl);
+                                                $result = $this->generateQris($body);
                                                 $result = json_decode($result, true);
-
                                                 if ($result) {
-                                                    if ($result['success'] == true) {
-                                                        if (array_key_exists('qr_url', $result['data'])) {
-                                                            $payment_code = $result['data']['qr_url'];
-                                                        } else {
-                                                            if ($result['data']['pay_code']) {
-                                                                $payment_code = $result['data']['pay_code'];
-                                                            } else {
-                                                                $payment_code = $result['data']['checkout_url'];
-                                                            }
-                                                        }
-
-                                                        if (empty($payment_code)) {
-                                                            $redirect = true;
-                                                            $payment_code = $result['data']['checkout_url'];
-                                                        }
+                                                    if ($result['responseCode'] == 2004700) {
+                                                        $redirect = true;
+                                                        $payment_code = $result['qrUrl'];
                                                     } else {
                                                         $this->session->setFlashdata('error', 'Result : ' . $result['message']);
                                                         return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
                                                     }
                                                 } else {
-                                                    $this->session->setFlashdata('error', 'Gagal terkoneksi ke Tripay');
+                                                    $this->session->setFlashdata('error', 'Gagal terkoneksi ke ayolinx');
                                                     return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
                                                 }
-
-
                                             } else if ($method[0]['provider'] == 'Balance') {
 
                                                 if ($this->users == false) {
@@ -1212,12 +1173,10 @@ class Games extends BaseController
                                                         } else {
                                                             $ket = 'Failed Order';
                                                         }
-
                                                     } else if ($product[0]['provider'] == 'Manual') {
 
                                                         $status = 'Processing';
                                                         $ket = 'Pesanan siap diproses';
-
                                                     } else if ($product[0]['provider'] == 'AG') {
 
                                                         $result = $this->M_Base->ag_v1_order($product[0]['sku'], $customer_no, $order_id);
@@ -1233,14 +1192,10 @@ class Games extends BaseController
 
                                                             $ket = $result['data']['sn'];
                                                         }
-
                                                     } else {
                                                         $ket = 'Provider tidak ditemukan';
                                                     }
-
-
                                                 }
-
                                             } else if ($method[0]['provider'] == 'Manual') {
                                                 $payment_code = $method[0]['rek'];
                                             } else {
@@ -1259,6 +1214,7 @@ class Games extends BaseController
                                                 $saldosb = $this->users['balance'];
                                                 $saldost = $saldosb - $price;
                                             }
+                                            
 
                                             $this->M_Base->data_insert('orders', [
                                                 'order_id' => $order_id,
@@ -1298,11 +1254,10 @@ class Games extends BaseController
 
                                             $this->session->setFlashdata('success', 'Pesanan berhasil dibuat');
                                             if ($redirect == true) {
-                                                return redirect()->to($payment_code);
+                                                return redirect()->to(base_url() . '/payment/' . $order_id);
                                             } else {
                                                 return redirect()->to(base_url() . '/payment/' . $order_id);
                                             }
-
                                         } else {
                                             $this->session->setFlashdata('error', 'Metode pembayaran sedang gangguan');
                                             return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
@@ -1311,7 +1266,6 @@ class Games extends BaseController
                                         $this->session->setFlashdata('error', 'Metode pembayaran tidak ditemukan');
                                         return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
                                     }
-
                                 } else {
                                     $this->session->setFlashdata('error', 'Produk sedang gangguan');
                                     return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
@@ -1378,7 +1332,6 @@ class Games extends BaseController
                     ]);
 
                     return view('Games/index', $data);
-
                 } else {
                     throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound();
                 }
@@ -1419,8 +1372,6 @@ class Games extends BaseController
                             } else {
                                 $product_price = $product[0]['price_silver'];
                             }
-
-
                         } else if ($level == 'Gold') {
 
                             if ($product[0]['price_gold'] == 0 or empty($product[0]['price_gold'])) {
@@ -1428,11 +1379,9 @@ class Games extends BaseController
                             } else {
                                 $product_price = $product[0]['price_gold'];
                             }
-
                         } else if ($level == 'Member') {
 
                             $product_price = $product[0]['price'];
-
                         } else {
                             $product_price = $product[0]['price'];
                         }
@@ -1476,7 +1425,6 @@ class Games extends BaseController
                     'product' => $id,
                     'wa' => addslashes(trim(htmlspecialchars($this->request->getPost('wa')))),
                     'voucher' => addslashes(trim(htmlspecialchars($this->request->getPost('voucher')))),
-
                 ];
 
                 $product = $this->M_Base->data_where('product', 'id', $data_post['product']);
@@ -1505,6 +1453,14 @@ class Games extends BaseController
                             ]);
 
                             $real_price = count($price) == 1 ? $price[0]['price'] : $product[0]['price'];
+
+                            if (strcasecmp($method[0]['method'], 'QRIS') == 0) {
+                                $totalPembayaran = round(($real_price * 1.007) + 800);
+                            } elseif (strcasecmp($method[0]['method'], 'DANA') == 0) {
+                                $totalPembayaran = ceil($real_price * 1.0167);
+                            }
+
+                            $biaya_admin = max(0, $totalPembayaran - $real_price);
 
                             if (!empty($data_post['zone_id']) and $data_post['zone_id'] != 1) {
                                 $target = $data_post['user_id'] . $data_post['zone_id'];
@@ -1646,7 +1602,6 @@ class Games extends BaseController
                                     }
 
                                     $urlcek = '' . $url_de . '/' . $game_code . '/?id=' . $data_post['user_id'] . '&server=' . $zoneid . '&key=' . $key . '';
-
                                 } else {
                                     $urlcek = '' . $url_de . '/api/game/' . $games[0]['check_code'] . '/?id=' . $data_post['user_id'] . '&key=' . $key . '';
                                 }
@@ -1710,12 +1665,11 @@ class Games extends BaseController
 
                                     if ($resultx) {
                                         if ($resultx['status'] == 1) {
-
                                             $nickname = $resultx['data']['username'];
                                             echo json_encode([
                                                 'status' => true,
                                                 'msg' => '
-                                        <form action="" method="POST">
+                                            <form action="" method="POST">
 
                                             <input type="hidden" name="user_id" value="' . $data_post['user_id'] . '">
                                             <input type="hidden" name="zone_id" value="' . $data_post['zone_id'] . '">
@@ -1746,8 +1700,23 @@ class Games extends BaseController
                                                         <td class="text-left pt-2 pb-2"> ' . $target . '</td>
                                                     </tr>
                                                     <tr>
+                                                        <td colspan="2" class="text-left pt-2 pb-2">Rincian Pembayaran</td>
+                                                    </tr>
+                                                    <tr>
                                                         <td class="text-left pt-2 pb-2">Metode Pembayaran:</td>
                                                         <td class="text-left pt-2 pb-2"> ' . $method[0]['method'] . '</td>
+                                                    </tr>                            
+                                                    <tr>
+                                                        <td class="text-left pt-2 pb-2">Harga Produk:</td>
+                                                        <td class="text-left pt-2 pb-2"> ' . $real_price . '</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-left pt-2 pb-2">Biaya Admin:</td>
+                                                        <td class="text-left pt-2 pb-2"> ' . $biaya_admin . '</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-left pt-2 pb-2">Total Pembayaran:</td>
+                                                        <td class="text-left pt-2 pb-2"> ' . $totalPembayaran . '</td>
                                                     </tr>
                                                     <tr>
                                                         <td colspan="2" class="text-left pt-2 pb-2"> Pastikan data game Anda sudah benar. Kesalahan input data game bukan tanggung jawab kami. </td>
@@ -1761,11 +1730,71 @@ class Games extends BaseController
                                         </form>
                                         ',
                                             ]);
-
                                         } else if ($resultx['status'] == 0) {
+                                            $nickname = '';
                                             echo json_encode([
-                                                'status' => false,
-                                                'msg' => 'Usernames tidak Ditemukan',
+                                                'status' => true,
+                                                'msg' => '
+                                            <form action="" method="POST">
+
+                                            <input type="hidden" name="user_id" value="' . $data_post['user_id'] . '">
+                                            <input type="hidden" name="zone_id" value="' . $data_post['zone_id'] . '">
+                                            <input type="hidden" name="username" value="' . $result['data']['username'] . '">
+                                            <input type="hidden" name="method" value="' . $data_post['method'] . '">
+                                            <input type="hidden" name="product" value="' . $data_post['product'] . '">
+                                            <input type="hidden" name="wa" value="' . $data_post['wa'] . '">
+                                            <input type="hidden" name="target" value="' . $this->request->getPost('target') . '">
+                                            <input type="hidden" name="voucher" value="' . $data_post['voucher'] . '">
+
+
+                                            <table style="width: 100%;">
+                                                <tbody>
+                                                    <tr>
+                                                        <td class="text-left pt-2 pb-2">Kategori Layanan:</td>
+                                                        <td class="text-left pt-2 pb-2"> ' . $games[0]['games'] . '</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-left pt-2 pb-2">Nominal Layanan:</td>
+                                                        <td class="text-left pt-2 pb-2"> ' . $product[0]['product'] . '</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-left pt-2 pb-2">Nickname:</td>
+                                                        <td class="text-left pt-2 pb-2"><b> ' . $nickname . ' </b></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-left pt-2 pb-2">UserID:</td>
+                                                        <td class="text-left pt-2 pb-2"> ' . $target . '</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td colspan="2" class="text-left pt-2 pb-2">Rincian Pembayaran</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-left pt-2 pb-2">Metode Pembayaran:</td>
+                                                        <td class="text-left pt-2 pb-2"> ' . $method[0]['method'] . '</td>
+                                                    </tr>                            
+                                                    <tr>
+                                                        <td class="text-left pt-2 pb-2">Harga Produk:</td>
+                                                        <td class="text-left pt-2 pb-2"> ' . $real_price . '</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-left pt-2 pb-2">Biaya Admin:</td>
+                                                        <td class="text-left pt-2 pb-2"> ' . $biaya_admin . '</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-left pt-2 pb-2">Total Pembayaran:</td>
+                                                        <td class="text-left pt-2 pb-2"> ' . $totalPembayaran . '</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td colspan="2" class="text-left pt-2 pb-2"> Pastikan data game Anda sudah benar. Kesalahan input data game bukan tanggung jawab kami. </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                            <div class="text-right">
+                                                <button class="btn text-white" type="button" data-bs-dismiss="modal">Batal</button>
+                                                <button class="btn btn-primary" type="submit" name="tombol" value="submit" id="1xorder" onclick="nonaktif_button()">Bayar Sekarang</button>
+                                            </div>
+                                        </form>
+                                        ',
                                             ]);
                                         }
                                     } else {
@@ -1814,8 +1843,23 @@ class Games extends BaseController
                                                         <td class="text-left pt-2 pb-2"> ' . $target . '</td>
                                                     </tr>
                                                     <tr>
+                                                        <td colspan="2" class="text-left pt-2 pb-2">Rincian Pembayaran</td>
+                                                    </tr>
+                                                    <tr>
                                                         <td class="text-left pt-2 pb-2">Metode Pembayaran:</td>
                                                         <td class="text-left pt-2 pb-2"> ' . $method[0]['method'] . '</td>
+                                                    </tr>                            
+                                                    <tr>
+                                                        <td class="text-left pt-2 pb-2">Harga Produk:</td>
+                                                        <td class="text-left pt-2 pb-2"> ' . $real_price . '</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-left pt-2 pb-2">Biaya Admin:</td>
+                                                        <td class="text-left pt-2 pb-2"> ' . $biaya_admin . '</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-left pt-2 pb-2">Total Pembayaran:</td>
+                                                        <td class="text-left pt-2 pb-2"> ' . $totalPembayaran . '</td>
                                                     </tr>
                                                     <tr>
                                                         <td colspan="2" class="text-left pt-2 pb-2"> Pastikan data game Anda sudah benar. Kesalahan input data game bukan tanggung jawab kami. </td>
@@ -1829,7 +1873,6 @@ class Games extends BaseController
                                         </form>
                                         ',
                                             ]);
-
                                         } else {
                                             echo json_encode([
                                                 'status' => false,
@@ -1843,12 +1886,6 @@ class Games extends BaseController
                                         ]);
                                     }
                                 }
-
-
-
-
-
-
                             } else {
 
                                 $html_target = '';
@@ -1891,8 +1928,23 @@ class Games extends BaseController
                                                 </tr>
                                                 ' . $html_target . '
                                                 <tr>
+                                                    <td colspan="2" class="text-left pt-2 pb-2">Rincian Pembayaran</td>
+                                                </tr>
+                                                <tr>
                                                     <td class="text-left pt-2 pb-2">Metode Pembayaran:</td>
                                                     <td class="text-left pt-2 pb-2"> ' . $method[0]['method'] . '</td>
+                                                </tr>                            
+                                                <tr>
+                                                    <td class="text-left pt-2 pb-2">Harga Produk:</td>
+                                                    <td class="text-left pt-2 pb-2"> ' . $real_price . '</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-left pt-2 pb-2">Biaya Admin:</td>
+                                                    <td class="text-left pt-2 pb-2"> ' . $biaya_admin . '</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-left pt-2 pb-2">Total Pembayaran:</td>
+                                                    <td class="text-left pt-2 pb-2"> ' . $totalPembayaran . '</td>
                                                 </tr>
                                                 <tr>
                                                     <td colspan="2" class="text-left pt-2 pb-2"> Pastikan data game Anda sudah benar. Kesalahan input data game bukan tanggung jawab kami. </td>
@@ -2017,5 +2069,118 @@ class Games extends BaseController
         } else {
             throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound();
         }
+    }
+
+    public function signature()
+    {
+    $clientKey = $this->M_Base->u_get('ayolinx-key');
+    $requestTimestamp = $this->timestamp;
+    $string_to_sign = $clientKey . '|' . $requestTimestamp;
+    $private_key = file_get_contents('private_key.pem');
+
+    try {
+      openssl_sign($string_to_sign, $signature, $private_key, OPENSSL_ALGO_SHA256);
+    } catch (Exception $e) {
+      echo $e;
+    }
+    $base64_signature = base64_encode($signature);
+    return $base64_signature;
+    }
+
+    public function api($url, $headers = [], $post = [])
+    {
+        $timestamp = $this->timestamp;
+        $ch = curl_init();
+        $defaultHeaders = array(
+            'Content-Type: application/json',
+            'X-TIMESTAMP: ' . $timestamp,
+        );
+
+        $headers = array_merge($defaultHeaders, $headers);
+        $baseUrl =  "https://sandbox.ayolinx.id" . $url;
+
+        curl_setopt($ch, CURLOPT_URL, $baseUrl);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($post, JSON_UNESCAPED_SLASHES));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 0);
+
+        return curl_exec($ch);
+    }
+
+    public function get_token()
+    {
+        try {
+            $client_key = $this->M_Base->u_get('ayolinx-key');
+            $signature = $this->signature();
+            $header = [
+                'X-CLIENT-KEY: ' . $client_key,
+                'X-SIGNATURE: ' . $signature
+            ];
+            $response = $this->api('/v1.0/access-token/b2b', $header);
+            $result = json_decode($response, true);
+            $accessToken = $result["accessToken"] ?? null;
+            return $accessToken;
+        } catch (\Exception $e) {
+            return json_encode(['error' => $e]);
+        }
+    }
+
+    public function base_interface($signature, $timestamp, $token, $url, $post)
+    {
+        $curl = curl_init();
+
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => 'https://sandbox.ayolinx.id' . $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_POSTFIELDS => json_encode($post),
+            CURLOPT_HTTPHEADER => array(
+                'X-TIMESTAMP: ' . $timestamp,
+                'X-SIGNATURE:' . $signature,
+                'X-PARTNER-ID: CKSandbox-90083f51-98e0-4425-bc7b-776a2eeb5fb7',
+                'X-EXTERNAL-ID:' . $this->randomNumber(),
+                'Authorization: Bearer ' . $token,
+                'Content-Type: application/json'
+            ),
+        ));
+
+        $response = curl_exec($curl);
+
+        curl_close($curl);
+        return $response;
+    }
+
+    public function generateQris($data = [])
+    {
+        $timestamp = date('c');
+        $method = 'POST';
+        $urlSignature = "/v1.0/qr/qr-mpm-generate";
+        $token = $this->get_token();
+        $client_secret = 'SKSandbox-c2382b29-2395-4002-9ac5-fee6a6bdc52e';
+        $body = $data;
+        $hash = hash('sha256', json_encode($body));
+        $hexEncodedHash = strtolower($hash);
+        $data = "{$method}:{$urlSignature}:{$token}:{$hexEncodedHash}:{$timestamp}";
+        $signature = base64_encode(hash_hmac('sha512', $data, $client_secret, true));
+
+        $response = $this->base_interface($signature, $timestamp, $token, $urlSignature, $body);
+        return $response;
+    }
+
+    public function randomNumber()
+    {
+        $number = rand(11111111111, 99999999999);
+        return $number;
     }
 }
