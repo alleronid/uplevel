@@ -221,7 +221,14 @@ class Payment extends BaseController {
                     }
 		    	    }
 		    	    
-		    	}
+		    	} 
+
+                else if ($orders[0]['provider'] == 'DV') {
+                    $this->M_Base->data_update('orders', [
+                        'status' => 'Success',
+                        'ket' => 'Sandbox OK',
+                    ], $orders[0]['id']);
+                }
 
 
 		        return view('Payment/detail', $data);

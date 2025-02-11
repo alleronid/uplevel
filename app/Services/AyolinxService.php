@@ -3,14 +3,17 @@
 namespace App\Services;
 
 use App\Enums\AyolinxEnums;
+use App\Models\M_Base;
 use Exception;
 
 class AyolinxService
 {
+  private $M_Base;
   private $timestamp;
 
   public function __construct()
   {
+    $this->M_Base = new M_Base();
     $this->timestamp = date('c');
   }
 
@@ -90,7 +93,7 @@ class AyolinxService
       CURLOPT_HTTPHEADER => array(
         'X-TIMESTAMP: ' . $timestamp,
         'X-SIGNATURE:' . $signature,
-        'X-PARTNER-ID: CKSandbox-90083f51-98e0-4425-bc7b-776a2eeb5fb7',
+        'X-PARTNER-ID:' . $this->M_Base->u_get('ayolinx-key'),
         'X-EXTERNAL-ID:' . $this->randomNumber(),
         'Authorization: Bearer ' . $token,
         'Content-Type: application/json'
@@ -104,11 +107,11 @@ class AyolinxService
   }
 
   public function generateQris($data = []){
-    $timestamp = date('c');
+    $timestamp = $this->timestamp;
     $method = 'POST';
     $urlSignature = "/v1.0/qr/qr-mpm-generate";
     $token = $this->get_token();
-    $client_secret = 'SKSandbox-c2382b29-2395-4002-9ac5-fee6a6bdc52e';
+    $client_secret = $this->M_Base->u_get('ayolinx-secret');
     $body = $data;
     $hash = hash('sha256', json_encode($body));
     $hexEncodedHash = strtolower($hash);
@@ -119,8 +122,24 @@ class AyolinxService
     return $response;
   }
 
+  public function walletDana($data = []){
+    $timestamp = date('c');
+    $method = 'POST';
+    $urlSignature = '/direct-debit/core/v1/debit/payment-host-to-host';
+    $client_secret = $this->M_Base->u_get('ayolinx-secret');
+    $token = $this->get_token();
+    $body = $data;
+    $hash = hash('sha256',json_encode($body));
+    $hexEncodedHash = strtolower($hash);
+    $data = "{$method}:{$urlSignature}:{$token}:{$hexEncodedHash}:{$timestamp}";  
+    $signature = base64_encode(hash_hmac('sha512', $data, $client_secret, true));
+
+    $response = $this->base_interface($signature, $timestamp, $token, $urlSignature, $body);
+    return $response;
+  }
+
   public function randomNumber(){
-    $number = rand(11111111111,99999999999);
+    $number = strval(rand(11111111111,99999999999));
     return $number;
   }
 }
