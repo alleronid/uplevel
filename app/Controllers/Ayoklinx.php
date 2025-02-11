@@ -5,7 +5,7 @@ namespace App\Controllers;
 use App\Enums\AyolinxEnums;
 use Exception;
 
-class Ayolinx extends BaseController
+class Ayoklinx extends BaseController
 {
 
   private $timestamp;
@@ -41,6 +41,29 @@ class Ayolinx extends BaseController
     return $base64_signature;
   }
 
+  public function signatureReq($url, $tokenAccess ,$body = [], $method = 'POST', $client_secret): String
+  {
+    $timestamp = $this->timestamp;
+    $hashBody = hash('sha256', json_encode($body, JSON_UNESCAPED_SLASHES));
+    $data = "{$method}:{$url}:{$tokenAccess}:{$hashBody}:{$timestamp}";
+    $signature = base64_encode(hash_hmac('sha512', $data, $client_secret, true));
+    return $signature;
+  }
+
+  public function signatureInterface()
+  { 
+    return $signature;
+  }
+
+  public function signatureCallback($url, $body){
+    $timestamp = $this->timestamp;
+    $method = "POST";
+    $hash = hash('sha256', json_encode($request_body));
+    $data = "{$method}:{$url}:{$hash}:{$timestamp}";
+    $signature = base64_decode($headerSign);
+    $isValidSignature = openssl_verify($data, $signature, $publicKey, OPENSSL_ALGO_SHA256);
+  }
+
   public function api($url ,$headers= [], $post =[]){
     $timestamp = $this->timestamp;
 		$ch = curl_init();
@@ -59,8 +82,8 @@ class Ayolinx extends BaseController
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
 		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
-    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-    curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
 		curl_setopt($ch, CURLOPT_TIMEOUT, 0);
 
 		return curl_exec($ch);
@@ -117,7 +140,7 @@ class Ayolinx extends BaseController
     $token = $this->get_token();
     $client_secret = 'SKSandbox-c2382b29-2395-4002-9ac5-fee6a6bdc52e';
     $body = [  
-      'partnerReferenceNo' => 'fd3f5af0-af57-4513-95a8-77df45721ed27',
+      'partnerReferenceNo' => 'fd3f5af0-af57-4513-95a8-77df45721ed28',
       'amount' => [
           'currency' => 'IDR',
           'value' => '100000.00'
@@ -132,7 +155,7 @@ class Ayolinx extends BaseController
     $signature = base64_encode(hash_hmac('sha512', $data, $client_secret, true));
 
     $response = $this->base_interface($signature, $timestamp, $token, $urlSignature, $body);
-    return $response;
+    echo $response;
   }
 
   public function walletDana(){

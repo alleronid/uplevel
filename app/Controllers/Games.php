@@ -1689,7 +1689,7 @@ class Games extends BaseController
                                     curl_setopt_array(
                                         $curl,
                                         array(
-                                            CURLOPT_URL => 'https://v1.apigames.id/merchant/M220624ANIH7980TY/cek-username/' . $cekkode . '?user_id=' . $target . '&signature=fe51f2abf7d4796429b92d3fa64568c3',
+                                            CURLOPT_URL => 'https://v1.apigames.id/merchant/M250211DCAF5845WL/cek-username/' . $cekkode . '?user_id=' . $target . '&signature=3cb1a1ff271988de940d2b6c0e9637fb',
                                             CURLOPT_RETURNTRANSFER => true,
                                             CURLOPT_ENCODING => '',
                                             CURLOPT_MAXREDIRS => 10,
