@@ -1135,11 +1135,11 @@ class Games extends BaseController
                                                             "urlParams" => [
                                                                 [
                                                                     "type" => "PAY_RETURN",
-                                                                    "url" => "https://dev-payment.ayolinx.id/status?h=".$order_id
+                                                                    "url" => base_url() . '/payment/' . $order_id
                                                                 ],
                                                                 [
                                                                     "type" => "NOTIFICATION",
-                                                                    "url" => "https://dev-payment.ayolinx.id/status?h=".$order_id
+                                                                    "url" => base_url() . '/ayolinx/paymentcallback?refNo=' . $order_id
                                                                 ]
                                                             ],
                                                             "additionalInfo" => [
