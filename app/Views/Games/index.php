@@ -475,7 +475,7 @@ function get_price(id = null) {
 
                 var qrisd = document.getElementById("price-method-LQ");
                 var ovod = document.getElementById("price-method-OV");
-                var danad = document.getElementById("price-method-DA");
+                var danad = document.getElementById("price-method-DANA");
                 var shopeed = document.getElementById("price-method-SA");
                 var linkajad = document.getElementById("price-method-LA");
                 var vaatmd = document.getElementById("price-method-A1");
@@ -487,13 +487,14 @@ function get_price(id = null) {
                 var alfamartd = document.getElementById("price-method-FT");
                 var mandirid = document.getElementById("price-method-M1");
 
+                console.log(danad);
+
                 if (balance !== null) {
                     balance.innerHTML = 'Rp ' + (Math.round((harga))).toLocaleString('id-ID');
                 }
 
                 if (qrisc !== null) {
                     qrisc.innerHTML = 'Rp ' + (Math.round((harga * 1.007) + 800)).toLocaleString('id-ID');
-                    $('#harga_product').val(harga)
                 }
                 if (ovo !== null) {
                     ovo.innerHTML = 'Rp ' + (Math.round(harga * 1.03)).toLocaleString('id-ID');
