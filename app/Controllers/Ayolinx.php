@@ -377,7 +377,7 @@ class Ayolinx extends BaseController
           throw new Exception('Order not found!');
       }
 
-      $check_callback_where['partner_reference_no'] = $body->partner_reference_no;
+      $check_callback_where['partner_reference_no'] = $body->partnerReferenceNo;
       $check_callback_where['status'] = 'SUCCESS';
       $check_callback = $this->M_Base->data_where_2('callback', $check_callback_where);
 
