@@ -168,7 +168,7 @@ class Admin extends BaseController {
                 $this->session->remove('admin');
 
                 $this->session->setFlashdata('success', 'Logout berhasil');
-                return redirect()->to(base_url() . '/admin/login');
+                return redirect()->to(base_url() . '/admin');
             } else {
                 throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound();
             }

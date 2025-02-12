@@ -60,7 +60,7 @@ $routes->match(['get', 'post'], '/payment/(:any)', 'Payment::index/$1');
 
 $routes->match(['get', 'post'], '/SuperPag3', 'Admin\Home::index');
 $routes->match(['get', 'post'], '/admin/password', 'Admin\Home::password');
-$routes->match(['get', 'post'], '/admin-topupindo', 'Admin\Home::login');
+$routes->match(['get', 'post'], '/admin', 'Admin\Home::login');
 
 $routes->match(['get', 'post'], '/admin/konfigurasi/banner/delete/(:num)', 'Admin\Konfigurasi::banner/delete/$1');
 $routes->match(['get', 'post'], '/admin/konfigurasi', 'Admin\Konfigurasi::index');
