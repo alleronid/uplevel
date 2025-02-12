@@ -22,4 +22,9 @@ class AyolinxEnums
   const CANCEL_CODE = 05;
   const FAILED_CODE = 06;
   const NOT_FOUND = 07;  
+
+  //response code
+  const SUCCESS_DANA = '2005400';
+  const SUCCESS_QRIS = '2004700';
+  const UNAUTHORIZED = '581000001';
 }

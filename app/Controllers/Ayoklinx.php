@@ -5,7 +5,7 @@ namespace App\Controllers;
 use App\Enums\AyolinxEnums;
 use Exception;
 
-class Ayolinx extends BaseController
+class Ayoklinx extends BaseController
 {
 
   private $timestamp;
@@ -41,6 +41,29 @@ class Ayolinx extends BaseController
     return $base64_signature;
   }
 
+  public function signatureReq($url, $tokenAccess ,$body = [], $method = 'POST', $client_secret): String
+  {
+    $timestamp = $this->timestamp;
+    $hashBody = hash('sha256', json_encode($body, JSON_UNESCAPED_SLASHES));
+    $data = "{$method}:{$url}:{$tokenAccess}:{$hashBody}:{$timestamp}";
+    $signature = base64_encode(hash_hmac('sha512', $data, $client_secret, true));
+    return $signature;
+  }
+
+  public function signatureInterface()
+  { 
+    return $signature;
+  }
+
+  public function signatureCallback($url, $body){
+    $timestamp = $this->timestamp;
+    $method = "POST";
+    $hash = hash('sha256', json_encode($request_body));
+    $data = "{$method}:{$url}:{$hash}:{$timestamp}";
+    $signature = base64_decode($headerSign);
+    $isValidSignature = openssl_verify($data, $signature, $publicKey, OPENSSL_ALGO_SHA256);
+  }
+
   public function api($url ,$headers= [], $post =[]){
     $timestamp = $this->timestamp;
 		$ch = curl_init();
@@ -59,8 +82,8 @@ class Ayolinx extends BaseController
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
 		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
-    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-    curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
 		curl_setopt($ch, CURLOPT_TIMEOUT, 0);
 
 		return curl_exec($ch);
@@ -110,20 +133,29 @@ class Ayolinx extends BaseController
     return $response;
   }
 
-  public function generateQris($data = []){
+  public function generateQris(){
     $timestamp = date('c');
     $method = 'POST';
     $urlSignature = "/v1.0/qr/qr-mpm-generate";
     $token = $this->get_token();
     $client_secret = 'SKSandbox-c2382b29-2395-4002-9ac5-fee6a6bdc52e';
-    $body = $data;
+    $body = [  
+      'partnerReferenceNo' => 'fd3f5af0-af57-4513-95a8-77df45721ed28',
+      'amount' => [
+          'currency' => 'IDR',
+          'value' => '100000.00'
+      ],
+      'additionalInfo' => [
+          'channel' => 'BNC_QRIS'
+      ]
+    ];
     $hash = hash('sha256', json_encode($body));
     $hexEncodedHash = strtolower($hash);
     $data = "{$method}:{$urlSignature}:{$token}:{$hexEncodedHash}:{$timestamp}";  
     $signature = base64_encode(hash_hmac('sha512', $data, $client_secret, true));
 
     $response = $this->base_interface($signature, $timestamp, $token, $urlSignature, $body);
-    return $response;
+    echo $response;
   }
 
   public function walletDana(){
@@ -314,109 +346,6 @@ class Ayolinx extends BaseController
   public function randomNumber(){
     $number = rand(11111111111,99999999999);
     return $number;
-  }
 
-  public function generateQriss(){
-    $body = [
-      "partnerReferenceNo" => '12345678989',
-      "amount" => [
-          "currency" => "IDR",
-          "value" => '13131313'
-      ],
-      "additionalInfo" => [
-          "channel" => AyolinxEnums::QRIS
-      ]
-    ];
-  }
-
-  private function verifySignatureCallback($headerSign, $body){
-      $public_key = file_get_contents('public_key.pem');
-      $url = "/v1.0/qr/qr-mpm-notify";
-      $method = "POST";
-      $timestamp = $this->timestamp ?? date("c");
-      $hash = hash('sha256', json_encode($body));
-      $data = "{$method}:{$url}:{$hash}:{$timestamp}";
-      $signature = base64_decode($headerSign);
-      $isValidSignature = openssl_verify($data, $signature, $public_key, OPENSSL_ALGO_SHA256);
-
-      if (!$isValidSignature) {
-          throw new Exception('Signature not valid');
-      }
-  }
-
-  public function paymentCallback(){
-      $body_raw = file_get_contents('php://input');
-      $body = json_decode($body_raw);
-      $refNo = $this->request->getGet('refNo') ?? null;
-      $headers = $this->request->getHeaders();
-      $headerSign = $headers['X-Signature']->getValue();
-
-      if (empty($refNo)) {
-          throw new Exception('refNo cannot be null!');
-      }
-
-      // verify signature matiin dulu
-      // $this->verifySignatureCallback($headerSign, $body_raw);
-
-      $status_callback = $body->transactionStatusDesc ?? null;
-      $payment_amount = 0;
-      $payment_type = '';
-
-      $order = $this->M_Base->data_where('orders', 'order_id', $refNo);
-      if (empty($order)){
-          // if not found in orders table then is topup
-          $order = $this->M_Base->data_where('topup', 'topup_id', $refNo); 
-          $payment_type = 'Topup';
-          $payment_amount = $order->amount;
-      } else{
-          $payment_type = 'Order';
-          $payment_amount = $order->price;
-      }
-
-      if(empty($order)){
-          throw new Exception('Order not found!');
-      }
-
-      $callback_id = 'CLB'.date('Ymd') . rand(0000,9999);
-      $callback_data = [
-          'callback_id'                   => $callback_id,
-          'payment_gateway'               => 'Ayolinx',
-          'payment_type'                  => $payment_type,
-          'payment_amount'                => $payment_amount,
-          'status'                        => $status_callback,
-          'partner_reference_no'          => $body->partnerReferenceNo ?? null, // nomor kita
-          'original_reference_no'         => $body->originalReferenceNo ?? null, // nomor ayolink (PG)
-          'original_partner_reference_no' => $body->originalPartnerReferenceNo ?? null, // nomor dana (merchant)
-          'date_create'                   => date('Y-m-d G:i:s'),
-          'request_body'                  => $body_raw,
-      ];
-
-      $this->M_Base->data_insert('callback', $data);
-
-      if ($status_callback == 'SUCCESS') {
-          if ($payment_type == 'Topup') {
-              $user = $this->M_Base->data_where('users', 'username', $order->username); 
-              $balance = $user->balance ?? 0;
-              $new_balance = $balance + $payment_amount;
-
-              $this->M_Base->data_update('users', [
-                  'balance' => $new_balance
-              ], $user->id);
-          }else{
-              $user = $this->M_Base->data_where('users', 'username', $order->username) ?? null; 
-              if ($order->method_code == 'Balance' && !empty($user)) {
-                  $balance = $user->balance ?? 0;
-                  $new_balance = $balance - $payment_amount;
-
-                  $this->M_Base->data_update('users', [
-                      'balance' => $new_balance
-                  ], $user->id);
-              }
-          }
-          return json_encode(['status' => 'success', 'reference_no' => $refNo]);
-      }
-
-      return json_encode(['status' => 'failed', 'reference_no' => $refNo]);
   }
 }
-

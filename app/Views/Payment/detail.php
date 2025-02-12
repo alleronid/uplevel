@@ -29,7 +29,7 @@
 								<div class="col-sm-6">
     							    
     							    <?php 
-    							     if ($orders['payment_gateway'] == 'Tripay') { 
+    							     if ($orders['payment_gateway'] == 'Ayolinx') { 
                                         if ( in_array($orders['method_code'], array('QRIS','QRISC')) ) { 
                                              $fee = 800 ; 
                                              $harga = ($orders['price']*1.007) + $fee ; 
@@ -88,18 +88,18 @@
 									</div>
 									<?php if ($orders['status'] == 'Pending'): ?>
 									
-									<?php if ($orders['payment_type'] == 'QRIS' && $orders['payment_gateway'] == 'Xendit'): ?>
+									<?php if ($orders['payment_type'] == 'QRIS' && $orders['payment_gateway'] == 'Ayolinx'): ?>
 
         									<div class="pb-4"><b> SCAN QR CODE dibawah ini </b><br>
-        									     <img src="https://api.qrserver.com/v1/create-qr-code/?data=<?= $orders['payment_code']; ?>&amp;size=250x250" class="mt-3" alt="" title="" />
+        									     <img src="https://api.qrserver.com/v1/create-qr-code/?data=<?= $orders['payment_code']; ?>&size=200x200" class="mt-3	" alt="" title="" />
         									</div>
         									
 									<?php endif ?>
 									
 									<?php if (filter_var($orders['payment_code'], FILTER_VALIDATE_URL)): ?>
-    									<?php if ( in_array($orders['method_code'], array('QRIS','QRISC')) ) : ?>
+    									<?php if ( in_array($orders['method_code'], array('QRIS')) ) : ?>
     								    <div class="pb-4"><b> SCAN QR CODE dibawah ini </b><br>
-    									     <img src="<?= $orders['payment_code']; ?>" class="mt-3" width="250" alt="" title="" />
+    									     <img src="<?= $orders['payment_code']; ?>" width="20px" height="20" alt="" title="" />
     									</div>
     									<?php else: ?>
     									<div class="pb-4"> Klik tombol untuk melakukan Pembayaran <br>
@@ -109,7 +109,7 @@
     									
     									
     									
-    								<?php elseif ($orders['payment_type'] == 'QRIS' && $orders['payment_gateway'] == 'Xendit'): ?>
+    								<?php elseif ($orders['payment_type'] == 'QRIS' && $orders['payment_gateway'] == 'Ayolinx'): ?>
     	
 									<?php else: ?>
     									<div class="pb-4"> No Rekening / No. Virtual Account <br>

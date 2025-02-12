@@ -185,7 +185,7 @@ button.accordion-button {
                                 display: none;
                             }
                             </style>
-                            <?php endif ?>
+                            <?php endif ?>  
 
                             <?php if ($games['target'] == 'joki'): ?>
                             <div class="kuantitibox mt-4">
@@ -369,7 +369,6 @@ button.accordion-button {
                             <div class="form-group pt-3">
 
                                 <input type="text" name="wa" placeholder="Masukan No. Whatsapp" class="form-control" value="" required>
-
                                 <small class="mt-2 d-block mb-3">
                                     Dengan membeli otomatis saya menyutujui <a href="<?= base_url(); ?>/syarat-ketentuan/" target="_blank" class="text-warning">Ketentuan Layanan</a>.
                                 </small>
@@ -435,8 +434,6 @@ function parseNumber(strg) {
     return parseFloat(strg);
 }
 
-
-
 function get_price(id = null) {
 
     <?php if ($games['target'] == 'joki'): ?>
@@ -463,7 +460,7 @@ function get_price(id = null) {
 
                 var balance = document.getElementById("price-method-balance");
 
-                var qrisc = document.getElementById("price-method-QRISC");
+                var qrisc = document.getElementById("price-method-BNC_QRIS");
                 var ovo = document.getElementById("price-method-OVO");
                 var shopee = document.getElementById("price-method-SHOPEEPAY");
                 var vabsi = document.getElementById("price-method-BSIVA");
@@ -475,7 +472,6 @@ function get_price(id = null) {
                 var indomaret = document.getElementById("price-method-INDOMARET");
                 var alfamart = document.getElementById("price-method-ALFAMART");
                 var alfamidi = document.getElementById("price-method-ALFAMIDI");
-
 
                 var qrisd = document.getElementById("price-method-LQ");
                 var ovod = document.getElementById("price-method-OV");
@@ -497,6 +493,7 @@ function get_price(id = null) {
 
                 if (qrisc !== null) {
                     qrisc.innerHTML = 'Rp ' + (Math.round((harga * 1.007) + 800)).toLocaleString('id-ID');
+                    $('#harga_product').val(harga)
                 }
                 if (ovo !== null) {
                     ovo.innerHTML = 'Rp ' + (Math.round(harga * 1.03)).toLocaleString('id-ID');
@@ -531,7 +528,6 @@ function get_price(id = null) {
                 if (alfamidi !== null) {
                     alfamidi.innerHTML = 'Rp ' + (Math.round(harga + 6000)).toLocaleString('id-ID');
                 }
-
 
                 if (qrisd !== null) {
                     qrisd.innerHTML = 'Rp ' + (Math.round((harga * 1.007) + 0)).toLocaleString('id-ID');
@@ -712,7 +708,7 @@ function process_order() {
         return this.value;
     }).get();
     user_id = JSON.stringify(user_id);
-
+    console.log(user_id);
     var zone_id = '1';
 
     <?php elseif ($games['target'] == 'loginninokuni'): ?>
@@ -784,6 +780,7 @@ function process_order() {
     var method = $("input[name=method]:checked").val();
     var wa = $("input[name=wa]").val();
     var voucher = $("input[name=voucher]").val();
+    var harga = $('#harga_product').val()
 
     if (user_id == '' || user_id == ' ') {
         Swal.fire('Gagal', 'ID Player harus diisi', 'error');
