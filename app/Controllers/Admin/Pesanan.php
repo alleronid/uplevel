@@ -256,8 +256,7 @@ class Pesanan extends BaseController
             return redirect()->to(base_url() . '/admin/login');
         } else {
             $orders = $this->M_Base->data_where('orders', 'order_id', $order_id);
-
-            if (count($orders) === 1) {
+              if (count($orders) === 1) {
 
                 $target = '';
                 if ($orders[0]['zone_id'] == 'joki') {

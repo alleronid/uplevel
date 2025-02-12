@@ -42,7 +42,7 @@ class AyolinxService
 		);
 
     $headers = array_merge($defaultHeaders, $headers);
-    $baseUrl =  "https://sandbox.ayolinx.id".$url;
+    $baseUrl =  "https://openapi.ayolinx.id".$url;
 
 		curl_setopt($ch, CURLOPT_URL, $baseUrl);
 		curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
@@ -81,7 +81,7 @@ class AyolinxService
     $curl = curl_init();
 
     curl_setopt_array($curl, array(
-      CURLOPT_URL => 'https://sandbox.ayolinx.id' . $url,
+      CURLOPT_URL => 'https://openapi.ayolinx.id' . $url,
       CURLOPT_RETURNTRANSFER => true,
       CURLOPT_ENCODING => '',
       CURLOPT_MAXREDIRS => 10,
