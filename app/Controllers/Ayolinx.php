@@ -377,6 +377,26 @@ class Ayolinx extends BaseController
           throw new Exception('Order not found!');
       }
 
+      $check_callback_where['partner_reference_no'] = $body->partnerReferenceNo;
+      $check_callback_where['status'] = 'SUCCESS';
+      $check_callback = $this->M_Base->data_where_2('callback', $check_callback_where);
+
+      if (!empty($check_callback)) {
+          throw new Exception('Payment already done success!');
+      }
+
+      $check_order_where['status'] = 'Success';
+      $check_order_where[strtolower($payment_type).'_id'] = $refNo;
+      if ($payment_type == 'Topup') {
+          $check_order = $this->M_Base->data_where_2('topup', $check_order_where);
+      }elseif($payment_type == 'Order'){
+          $check_order = $this->M_Base->data_where_2('orders', $check_order_where);
+      }
+
+      if (!empty($check_order)) {
+          throw new Exception('Payment order already done success!');
+      }
+
       $callback_id = 'CLB'.date('Ymd') . rand(0000,9999);
       $callback_data = [
           'callback_id'                   => $callback_id,
