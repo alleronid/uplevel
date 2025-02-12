@@ -328,4 +328,95 @@ class Ayolinx extends BaseController
       ]
     ];
   }
+
+  private function verifySignatureCallback($headerSign, $body){
+      $public_key = file_get_contents('public_key.pem');
+      $url = "/v1.0/qr/qr-mpm-notify";
+      $method = "POST";
+      $timestamp = $this->timestamp ?? date("c");
+      $hash = hash('sha256', json_encode($body));
+      $data = "{$method}:{$url}:{$hash}:{$timestamp}";
+      $signature = base64_decode($headerSign);
+      $isValidSignature = openssl_verify($data, $signature, $public_key, OPENSSL_ALGO_SHA256);
+
+      if (!$isValidSignature) {
+          throw new Exception('Signature not valid');
+      }
+  }
+
+  public function paymentCallback(){
+      $body_raw = file_get_contents('php://input');
+      $body = json_decode($body_raw);
+      $refNo = $this->request->getGet('refNo') ?? null;
+      $headers = $this->request->getHeaders();
+      $headerSign = $headers['X-Signature']->getValue();
+
+      if (empty($refNo)) {
+          throw new Exception('refNo cannot be null!');
+      }
+
+      // verify signature matiin dulu
+      // $this->verifySignatureCallback($headerSign, $body_raw);
+
+      $status_callback = $body->transactionStatusDesc ?? null;
+      $payment_amount = 0;
+      $payment_type = '';
+
+      $order = $this->M_Base->data_where('orders', 'order_id', $refNo);
+      if (empty($order)){
+          // if not found in orders table then is topup
+          $order = $this->M_Base->data_where('topup', 'topup_id', $refNo); 
+          $payment_type = 'Topup';
+          $payment_amount = $order->amount;
+      } else{
+          $payment_type = 'Order';
+          $payment_amount = $order->price;
+      }
+
+      if(empty($order)){
+          throw new Exception('Order not found!');
+      }
+
+      $callback_id = 'CLB'.date('Ymd') . rand(0000,9999);
+      $callback_data = [
+          'callback_id'                   => $callback_id,
+          'payment_gateway'               => 'Ayolinx',
+          'payment_type'                  => $payment_type,
+          'payment_amount'                => $payment_amount,
+          'status'                        => $status_callback,
+          'partner_reference_no'          => $body->partnerReferenceNo ?? null, // nomor kita
+          'original_reference_no'         => $body->originalReferenceNo ?? null, // nomor ayolink (PG)
+          'original_partner_reference_no' => $body->originalPartnerReferenceNo ?? null, // nomor dana (merchant)
+          'date_create'                   => date('Y-m-d G:i:s'),
+          'request_body'                  => $body_raw,
+      ];
+
+      $this->M_Base->data_insert('callback', $data);
+
+      if ($status_callback == 'SUCCESS') {
+          if ($payment_type == 'Topup') {
+              $user = $this->M_Base->data_where('users', 'username', $order->username); 
+              $balance = $user->balance ?? 0;
+              $new_balance = $balance + $payment_amount;
+
+              $this->M_Base->data_update('users', [
+                  'balance' => $new_balance
+              ], $user->id);
+          }else{
+              $user = $this->M_Base->data_where('users', 'username', $order->username) ?? null; 
+              if ($order->method_code == 'Balance' && !empty($user)) {
+                  $balance = $user->balance ?? 0;
+                  $new_balance = $balance - $payment_amount;
+
+                  $this->M_Base->data_update('users', [
+                      'balance' => $new_balance
+                  ], $user->id);
+              }
+          }
+          return json_encode(['status' => 'success', 'reference_no' => $refNo]);
+      }
+
+      return json_encode(['status' => 'failed', 'reference_no' => $refNo]);
+  }
 }
+
