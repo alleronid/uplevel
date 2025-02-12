@@ -2,7 +2,17 @@
 
 namespace App\Controllers;
 
+use App\Enums\AyolinxEnums;
+use App\Services\AyolinxService;
+
 class User extends BaseController {
+
+    private $ayolinxService;
+
+    public function __construct()
+    {
+        $this->ayolinxService = new AyolinxService();
+    }
 
     public function index() {
 
@@ -146,65 +156,75 @@ class User extends BaseController {
                         if (count($method) === 1) {
                             if ($method[0]['status'] == 'On') {
 
-                                $topup_id = date('Ymd') . rand(0000,9999);
-
-                                $uniq = $method[0]['uniq'] == 'Y' ? rand(000,999) : 0;
-
+                                $topup_id = 'TPP'.date('Ymd') . rand(0000,9999);
+                                $uniq = $method[0]['uniq'] == 'Y' ? rand(111,999) : 0;
                                 $amount = $data_post['nominal'] + $uniq;
-
-                                if ($method[0]['provider'] == 'Tripay') {
-
-                                    $data = [
-                                        'method'         => $method[0]['code'],
-                                        'merchant_ref'   => $topup_id,
-                                        'amount'         => $amount,
-                                        'customer_name'  => $this->users['username'],
-                                        'customer_email' => 'email@domain.com',
-                                        'customer_phone' => $this->users['wa'],
-                                        'order_items'    => [
-                                            [
-                                                'sku'         => 'DS',
-                                                'name'        => 'Topup Saldo',
-                                                'price'       => $amount,
-                                                'quantity'    => 1,
+                                $biaya_admin = 0;
+                                if ($method[0]['provider'] == 'Ayolinx') {
+                                    if (strcasecmp($method[0]['method'], 'QRIS') == 0) {
+                                        $price = round(($amount * 1.007));
+                                        $biaya_admin = max(0, $price - $amount);
+                                        $body = [
+                                            "partnerReferenceNo" => $topup_id,
+                                            "amount" => [
+                                                "currency" => "IDR",
+                                                "value" => $price
+                                            ],
+                                            "additionalInfo" => [
+                                                "channel" => AyolinxEnums::QRIS
                                             ]
-                                        ],
-                                        'return_url'   => base_url(),
-                                        'expired_time' => (time() + (24 * 60 * 60)), // 24 jam
-                                        'signature'    => hash_hmac('sha256', $this->M_Base->u_get('tripay-merchant').$topup_id.$amount, $this->M_Base->u_get('tripay-private'))
-                                    ];
-
-                                    $curl = curl_init();
-
-                                    curl_setopt_array($curl, [
-                                        CURLOPT_FRESH_CONNECT  => true,
-                                        CURLOPT_URL            => 'https://tripay.co.id/api/transaction/create',
-                                        CURLOPT_RETURNTRANSFER => true,
-                                        CURLOPT_HEADER         => false,
-                                        CURLOPT_HTTPHEADER     => ['Authorization: Bearer '.$this->M_Base->u_get('tripay-key')],
-                                        CURLOPT_FAILONERROR    => false,
-                                        CURLOPT_POST           => true,
-                                        CURLOPT_POSTFIELDS     => http_build_query($data),
-                                        CURLOPT_IPRESOLVE      => CURL_IPRESOLVE_V4
-                                    ]);
-
-                                    $result = curl_exec($curl);
-                                    $result = json_decode($result, true);
-
-                                    if ($result) {
-                                        if ($result['success'] == true) {
-                                            if (array_key_exists('qr_url', $result['data'])) {
-                                                $payment_code = $result['data']['qr_url'];
+                                        ];
+                                        $result = $this->ayolinxService->generateQris($body);
+                                        $result = json_decode($result, true);
+                                        if ($result) {
+                                            if ($result['responseCode'] == AyolinxEnums::SUCCESS_QRIS) {
+                                                $payment_code = $result['qrContent'];
                                             } else {
-                                                $payment_code = $result['data']['pay_code'];
+                                                $this->session->setFlashdata('error', 'Result : ' . $result['message']);
+                                                return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
                                             }
                                         } else {
-                                            $this->session->setFlashdata('error', 'Result : ' . $result['message']);
+                                            $this->session->setFlashdata('error', 'Gagal terkoneksi ke ayolinx');
                                             return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
                                         }
-                                    } else {
-                                        $this->session->setFlashdata('error', 'Gagal terkoneksi ke Tripay');
-                                        return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
+                                    } elseif (strcasecmp($method[0]['method'], 'DANA') == 0) {
+                                        $price = ceil($amount * 1.0167);
+                                        $biaya_admin = max(0, $price - $amount);
+                                        $body = [
+                                                "partnerReferenceNo" => $topup_id,
+                                                "validUpTo" => "1746249942",
+                                                "amount" => [
+                                                    "currency" => "IDR",
+                                                    "value" => $price
+                                                ],
+                                                "urlParams" => [
+                                                    [
+                                                        "type" => "PAY_RETURN",
+                                                        "url" => "https://dev-payment.ayolinx.id/status?h=".$order_id
+                                                    ],
+                                                    [
+                                                        "type" => "NOTIFICATION",
+                                                        "url" => "https://dev-payment.ayolinx.id/status?h=".$order_id
+                                                    ]
+                                                ],
+                                                "additionalInfo" => [
+                                                    "channel" => AyolinxEnums::EWALLET
+                                                ]
+                                            ];
+                                        
+                                        $result = $this->ayolinxService->walletDana($body);
+                                        $result = json_decode($result, true);
+                                        if ($result) {
+                                            if ($result['responseCode'] == AyolinxEnums::SUCCESS_DANA) {
+                                                $payment_code = $result['webRedirectUrl'];
+                                                } else {
+                                                    $this->session->setFlashdata('error', 'Result : ' . $result['message']);
+                                                    return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
+                                                }
+                                            } else {
+                                                $this->session->setFlashdata('error', 'Gagal terkoneksi ke ayolinx');
+                                                return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
+                                            }
                                     }
 
                                 } else if ($method[0]['provider'] == 'Manual') {
@@ -220,8 +240,12 @@ class User extends BaseController {
                                     'method_id' => $method[0]['id'],
                                     'method' => $method[0]['method'],
                                     'amount' => $amount,
+                                    'admin_fee' => $biaya_admin,
                                     'status' => 'Pending',
                                     'payment_code' => $payment_code,
+                                    'payment_type'=> $method[0]['type'],
+                                    'method_code' =>  $method[0]['code'],
+                                    'payment_gateway' => $method[0]['provider'],
                                     'date_create' => date('Y-m-d G:i:s'),
                                 ]);
 

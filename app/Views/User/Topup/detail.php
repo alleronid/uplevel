@@ -30,10 +30,10 @@
 					                        <div class="col-sm-6">
 					                            
 					                            <?php 
-                							     if ($topup['payment_gateway'] == 'Tripay') { 
+                							     if ($topup['payment_gateway'] == 'Ayolinx') { 
                                                     if ( in_array($topup['method_code'], array('QRIS','QRISC')) ) { 
-                                                         $fee = 800 ; 
-                                                         $harga = ($topup['amount']*1.007) + $fee ; 
+                                                        //  $fee = 800 ; 
+                                                         $harga = ($topup['amount']*1.007 + $topup['admin_fee']); 
                                                      } else if ( in_array($topup['method_code'], array('OVO','SHOPEEPAY')) ) { 
                                                          $fee = 0 ; 
                                                          $harga = ($topup['amount']*1.03) + $fee ; 
@@ -55,7 +55,7 @@
                                                      } else if ($topup['payment_code'] == 'LQ') { 
                                                          $harga = ($topup['amount']*1.0078) ; 
                                                      } else if ( in_array($topup['method_code'], array('OV','DA','LA')) ) { 
-                                                         $harga = ($topup['amount']*1.0167) ; 
+                                                         $harga = ($topup['amount']*1.0155) ; 
                                                      } else if ($topup['payment_code'] == 'SA') { 
                                                          $harga = ($topup['amount']*1.04) ; 
                                                      }  else if ($topup['payment_code'] == 'BC') { 
@@ -76,7 +76,7 @@
                                                  } else if ($topup['payment_gateway'] == 'Xendit') { 
                                                      $harga = $topup['amount'];
                                                  } else {
-                                                     $harga = $topup['amount'];
+                                                     $harga = $topup['amount'] + $topup['admin_fee'];
                                                  }
                                                  ?>
 
@@ -87,7 +87,7 @@
 					                           
 					                            <?php if ($topup['status'] == 'Pending'): ?>
 									
-                									<?php if ($topup['payment_type'] == 'QR_CODE'): ?>
+                									<?php if ($topup['payment_type'] == 'QRIS'): ?>
                 									
                     									<div class="pb-4"><b> SCAN QR CODE dibawah ini </b><br>
                     									     <img src="https://api.qrserver.com/v1/create-qr-code/?data=<?= $topup['payment_code']; ?>&amp;size=250x250" class="mt-3" alt="" title="" />
@@ -99,20 +99,21 @@
                 									<div class="pb-4"> Klik tombol untuk melakukan Pembayaran <br>
                 									    <a href="<?= $topup['payment_code']; ?>" class="btn btn-primary mt-2" target="_blank">Bayar Sekarang</a>
                 									</div>
-                								<?php elseif ($topup['payment_type'] == 'QR_CODE'): ?>
+                								<?php elseif ($topup['payment_type'] == 'QRIS'): ?>
                 								<?php elseif ( in_array($topup['method_code'], array('QRIS','QRISC')) ) : ?>
                 								    <div class="pb-4"><b> SCAN QR CODE dibawah ini </b><br>
                 									     <img src="<?= $topup['payment_code']; ?>" class="mt-3" width="250" alt="" title="" />
                 									</div>
             									<?php else: ?>
                 									<div class="pb-4"> No Rekening / No. Virtual Account <br>
-                										 <h5><b class="d-block mt-2"><?= $topup['payment_code']; ?><i class="fa fa-clone pl-2 clip" onclick="copy_rek()" data-clipboard-text="<?= $topup['payment_code']; ?>"></i></b></h5>
+                										 <h5><b class="d-block mt-2"><?= $topup['payment_code']; ?><i class="fa fa-clone pl-2 clip" 
+																		 onclick="copy_rek()" data-clipboard-text="<?= $topup['payment_code']; ?>"></i></b></h5>
                 									</div>
             									<?php endif ?>
 					                            
 					                            
 					                            <div class="pb-4"> 
-					                            	Jumlah Pembayaran <h5>Rp. <?= number_format($harga,0,',','.'); ?></h5>
+					                            	Jumlah Pembayaran <h5>Rp. <?= number_format($topup['amount'] + $topup['admin_fee'],0,',','.'); ?></h5>
 					                            </div>
 					                            
 					                            <?php else: ?>
