@@ -44,6 +44,7 @@
 												<th>Kategori</th>
 												<th>Kode Unik</th>
 												<th>Status</th>
+												<th>MDR</th>
 												<th>Action</th>
 											</tr>
 											<?php $no = 1; foreach ($method as $loop): ?>
@@ -70,6 +71,7 @@
 													?>
 												</td>
 												<td><?= $loop['status']; ?></td>
+												<td><?= $loop['mdr_rate']; ?></td>
 												<td width="10">
 													<a href="<?= base_url(); ?>/admin/metode/edit/<?= $loop['id']; ?>" class="btn btn-primary btn-sm">Edit</a>
 													<button type="button" onclick="hapus('<?= base_url(); ?>/admin/metode/delete/<?= $loop['id']; ?>');" class="btn btn-danger btn-sm">Hapus</button>
