@@ -50,7 +50,7 @@ class Ayolinx extends BaseController
 		);
 
     $headers = array_merge($defaultHeaders, $headers);
-    $baseUrl =  "https://openapi.ayolinx.id".$url;
+    $baseUrl =  "https://sandbox.ayolinx.id".$url;
 
 		curl_setopt($ch, CURLOPT_URL, $baseUrl);
 		curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);

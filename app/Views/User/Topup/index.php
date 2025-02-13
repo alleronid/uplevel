@@ -2,9 +2,6 @@
 			
 			<?php $this->section('css'); ?>
 			<style>
-			    p {
-    color: #000 !important;
-}
 .card {
     background-color: transparent !important;
 }
@@ -31,6 +28,7 @@
 			                <div class="pb-3">
 			                    <div class="section">
 			                        <div class="card-body">
+										<?= alert(); ?>
 			                        	<form action="" method="POST">
 			                        		<div class="form-group">
 			                        			<label class="text-white">Nominal Topup</label>
@@ -45,7 +43,7 @@
 	                                                        <img src="<?= base_url(); ?>/assets/images/method/<?= $loop['image']; ?>" class="card img-fluid mb-1" style="height: 40px;">
 	                                                    </div>
 	                                                    <div class="ml-2 mt-2">
-	                                                        <p class="m-0" style="font-weight: normal;"><?= $loop['method']; ?></p>
+	                                                        <p class="m-0" style="font-weight: normal; color: white !important;"><?= $loop['method']; ?></p>
 	                                                    </div>
 	                                                </label>
 	                                            </div>
