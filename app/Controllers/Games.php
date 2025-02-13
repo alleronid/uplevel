@@ -1097,7 +1097,7 @@ class Games extends BaseController
                                             $price = ceil($price);
                                             if ($method[0]['provider'] == 'Ayolinx') {
                                                 if (strcasecmp($method[0]['method'], 'QRIS') == 0) {
-                                                    $price = round(($product_price * 1.007));
+                                                    $price = round(($product_price * 1.009));
                                                     $body = [
                                                         "partnerReferenceNo" => $order_id,
                                                         "amount" => [
@@ -1124,7 +1124,7 @@ class Games extends BaseController
                                                         return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
                                                     }
                                                 } elseif (strcasecmp($method[0]['method'], 'DANA') == 0) {
-                                                    $price = ceil($product_price * 1.0155);
+                                                    $price = ceil($product_price * 1.07);
                                                     $body = [
                                                             "partnerReferenceNo" => $order_id,
                                                             "validUpTo" => "1746249942",
@@ -1486,9 +1486,9 @@ class Games extends BaseController
                             $real_price = count($price) == 1 ? $price[0]['price'] : $product[0]['price'];
 
                             if (strcasecmp($method[0]['method'], 'QRIS') == 0) {
-                                $totalPembayaran = round(($real_price * 1.007));
+                                $totalPembayaran = round(($real_price * 1.009));
                             } elseif (strcasecmp($method[0]['method'], 'DANA') == 0) {
-                                $totalPembayaran = ceil($real_price * 1.0155);
+                                $totalPembayaran = ceil($real_price * 1.017);
                             }
 
                             $biaya_admin = max(0, $totalPembayaran - $real_price);

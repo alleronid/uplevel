@@ -162,7 +162,7 @@ class User extends BaseController {
                                 $biaya_admin = 0;
                                 if ($method[0]['provider'] == 'Ayolinx') {
                                     if (strcasecmp($method[0]['method'], 'QRIS') == 0) {
-                                        $price = round(($amount * 1.007));
+                                        $price = round(($amount * 1.009));
                                         $biaya_admin = max(0, $price - $amount);
                                         $body = [
                                             "partnerReferenceNo" => $topup_id,
@@ -188,32 +188,35 @@ class User extends BaseController {
                                             return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
                                         }
                                     } elseif (strcasecmp($method[0]['method'], 'DANA') == 0) {
-                                        $price = ceil($amount * 1.0167);
+                                        $price = ceil($amount * 1.017);
                                         $biaya_admin = max(0, $price - $amount);
                                         $body = [
-                                                "partnerReferenceNo" => $topup_id,
-                                                "validUpTo" => "1746249942",
-                                                "amount" => [
-                                                    "currency" => "IDR",
-                                                    "value" => $price
+                                            "partnerReferenceNo" => $topup_id,
+                                            "validUpTo" => "1746249942",
+                                            "amount" => [
+                                                "currency" => "IDR",
+                                                "value" => $price
+                                            ],
+                                            "urlParams" => [
+                                                [
+                                                    "type" => "PAY_RETURN",
+                                                    "url" => base_url() . '/payment/' . $topup_id
                                                 ],
-                                                "urlParams" => [
-                                                    [
-                                                        "type" => "PAY_RETURN",
-                                                        "url" => "https://dev-payment.ayolinx.id/status?h=".$order_id
-                                                    ],
-                                                    [
-                                                        "type" => "NOTIFICATION",
-                                                        "url" => "https://dev-payment.ayolinx.id/status?h=".$order_id
-                                                    ]
-                                                ],
-                                                "additionalInfo" => [
-                                                    "channel" => AyolinxEnums::EWALLET
+                                                [
+                                                    "type" => "NOTIFICATION",
+                                                    "url" => base_url() . '/ayolinx/paymentcallback?refNo=' . $topup_id
                                                 ]
-                                            ];
+                                            ],
+                                            "additionalInfo" => [
+                                                "channel" => AyolinxEnums::EWALLET
+                                            ]
+                                        ];
                                         
                                         $result = $this->ayolinxService->walletDana($body);
                                         $result = json_decode($result, true);
+                                        print_r($body);
+                                        print("<br>");
+                                        print_r($result);die();
                                         if ($result) {
                                             if ($result['responseCode'] == AyolinxEnums::SUCCESS_DANA) {
                                                 $payment_code = $result['webRedirectUrl'];
