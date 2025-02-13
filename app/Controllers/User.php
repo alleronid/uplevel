@@ -215,12 +215,43 @@ class User extends BaseController {
                                         
                                         $result = $this->ayolinxService->walletDana($body);
                                         $result = json_decode($result, true);
-                                        print_r($body);
-                                        print("<br>");
-                                        print_r($result);die();
                                         if ($result) {
                                             if ($result['responseCode'] == AyolinxEnums::SUCCESS_DANA) {
                                                 $payment_code = $result['webRedirectUrl'];
+                                                } else {
+                                                    $this->session->setFlashdata('error', 'Result : ' . $result['message']);
+                                                    return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
+                                                }
+                                            } else {
+                                                $this->session->setFlashdata('error', 'Gagal terkoneksi ke ayolinx');
+                                                return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
+                                            }
+                                    } elseif (strcasecmp($method[0]['method'], 'BNI VIRTUAL ACCOUNT') == 0){
+                                        $price = ceil($amount + ($amount * 0.002) + 4000);
+                                        $biaya_admin = max(0, $price - $amount);
+                                        $number = $this->ayolinxService->customerNo();
+                                        $username = $this->users['username'];
+                                        $body = [
+                                                "partnerServiceId" => AyolinxEnums::BNI_SB,
+                                                "customerNo" => AyolinxEnums::BNI_SB.$number,
+                                                // "virtualAccountNo" => AyolinxEnums::BNI_SB."0169",
+                                                "virtualAccountName" =>  $username,
+                                                "trxId" => $topup_id,
+                                                "virtualAccountTrxType" => "C",
+                                                "totalAmount" => [
+                                                  "value" => $price,
+                                                  "currency" => "IDR"
+                                            ],
+                                            "additionalInfo" => [
+                                                "channel" => AyolinxEnums::VABNI
+                                            ]
+                                        ];
+
+                                        $result = $this->ayolinxService->generateVA($body);
+                                        $result = json_decode($result, true);
+                                        if ($result) {
+                                            if ($result['responseCode'] == AyolinxEnums::SUCCESS_VA_BNI) {
+                                                $payment_code = $result['virtualAccountData']['virtualAccountNo'];
                                                 } else {
                                                     $this->session->setFlashdata('error', 'Result : ' . $result['message']);
                                                     return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));

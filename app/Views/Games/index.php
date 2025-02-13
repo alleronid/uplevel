@@ -512,7 +512,7 @@ function get_price(id = null) {
                     vabca.innerHTML = 'Rp ' + (Math.round(harga + 5500)).toLocaleString('id-ID');
                 }
                 if (vabni !== null) {
-                    vabni.innerHTML = 'Rp ' + (Math.round(harga + 4250)).toLocaleString('id-ID');
+                    vabni.innerHTML = 'Rp ' + (Math.round((harga * 0.002) + harga  + 4000)).toLocaleString('id-ID');
                 }
                 if (vapermata !== null) {
                     vapermata.innerHTML = 'Rp ' + (Math.round(harga + 4250)).toLocaleString('id-ID');

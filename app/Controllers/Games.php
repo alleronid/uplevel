@@ -1164,6 +1164,38 @@ class Games extends BaseController
                                                             $this->session->setFlashdata('error', 'Gagal terkoneksi ke ayolinx');
                                                             return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
                                                         }
+                                                } elseif (strcasecmp($method[0]['method'], 'BNI VIRTUAL ACCOUNT') == 0){
+                                                    $price = ceil($product_price + ($product_price * 0.002) + 4000);
+                                                    $number = $this->ayolinxService->customerNo();
+                                                    $body = [
+                                                            "partnerServiceId" => AyolinxEnums::BNI_SB,
+                                                            "customerNo" => AyolinxEnums::BNI_SB.$number,
+                                                            // "virtualAccountNo" => AyolinxEnums::BNI_SB."0169",
+                                                            "virtualAccountName" =>  $username,
+                                                            "trxId" => $order_id,
+                                                            "virtualAccountTrxType" => "C",
+                                                            "totalAmount" => [
+                                                              "value" => $price,
+                                                              "currency" => "IDR"
+                                                        ],
+                                                        "additionalInfo" => [
+                                                            "channel" => AyolinxEnums::VABNI
+                                                        ]
+                                                    ];
+
+                                                    $result = $this->ayolinxService->generateVA($body);
+                                                    $result = json_decode($result, true);
+                                                    if ($result) {
+                                                        if ($result['responseCode'] == AyolinxEnums::SUCCESS_VA_BNI) {
+                                                            $payment_code = $result['virtualAccountData']['virtualAccountNo'];
+                                                            } else {
+                                                                $this->session->setFlashdata('error', 'Result : ' . $result['message']);
+                                                                return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
+                                                            }
+                                                        } else {
+                                                            $this->session->setFlashdata('error', 'Gagal terkoneksi ke ayolinx');
+                                                            return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
+                                                        }
                                                 }
                                             } else if ($method[0]['provider'] == 'Balance') {
 
@@ -1310,8 +1342,6 @@ class Games extends BaseController
                             }
                         }
                     }
-
-
 
                     $all_product = array_reverse($this->M_Base->data_where_array('product', [
                         'games_id' => $games[0]['id'],
@@ -1492,7 +1522,9 @@ class Games extends BaseController
                                 $totalPembayaran = round(($real_price * $rate));
                             } elseif (strcasecmp($method[0]['method'], 'DANA') == 0) {
                                 $totalPembayaran = ceil($real_price * $rate);
-                            }
+                            } elseif(strcasecmp($method[0]['method'], 'BNI VIRTUAL ACCOUNT')== 0){
+                                $totalPembayaran = ceil($real_price + ($real_price * 0.002) + 4000);
+                            } 
 
                             $biaya_admin = max(0, $totalPembayaran - $real_price);
 
