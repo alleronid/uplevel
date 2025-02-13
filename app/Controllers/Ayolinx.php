@@ -351,6 +351,8 @@ class Ayolinx extends BaseController
       $headers = $this->request->getHeaders();
       $headerSign = $headers['X-Signature']->getValue();
 
+      $this->logCallback($body_raw, json_encode(getallheaders()));
+
       if (empty($refNo)) {
           throw new Exception('refNo cannot be null!');
       }
@@ -367,13 +369,13 @@ class Ayolinx extends BaseController
           // if not found in orders table then is topup
           $order = $this->M_Base->data_where('topup', 'topup_id', $refNo); 
           $payment_type = 'Topup';
-          $payment_amount = $order->amount;
+          $payment_amount = $order->amount ?? 0;
       } else{
           $payment_type = 'Order';
-          $payment_amount = $order->price;
+          $payment_amount = $order->price ?? 0;
       }
 
-      if(empty($order)){
+      if(empty($order) || $payment_amount == 0){
           throw new Exception('Order not found!');
       }
 
@@ -411,7 +413,7 @@ class Ayolinx extends BaseController
           'request_body'                  => $body_raw,
       ];
 
-      $this->M_Base->data_insert('callback', $data);
+      $this->M_Base->data_insert('callback', $callback_data);
 
       if ($status_callback == 'SUCCESS') {
           if ($payment_type == 'Topup') {
@@ -437,6 +439,13 @@ class Ayolinx extends BaseController
       }
 
       return json_encode(['status' => 'failed', 'reference_no' => $refNo]);
+  }
+
+  private function logCallback($body, $header){
+      $logFile = 'logs/callback.log';
+      $message = "[" . date('Y-m-d H:i:s') . "]: BODY: ".$body ." HEADER: ". $header. PHP_EOL;
+
+      file_put_contents($logFile, $message, FILE_APPEND);
   }
 }
 
