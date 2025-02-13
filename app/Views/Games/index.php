@@ -487,14 +487,12 @@ function get_price(id = null) {
                 var alfamartd = document.getElementById("price-method-FT");
                 var mandirid = document.getElementById("price-method-M1");
 
-                console.log(danad);
-
                 if (balance !== null) {
                     balance.innerHTML = 'Rp ' + (Math.round((harga))).toLocaleString('id-ID');
                 }
 
                 if (qrisc !== null) {
-                    qrisc.innerHTML = 'Rp ' + (Math.round((harga * 1.007) + 800)).toLocaleString('id-ID');
+                    qrisc.innerHTML = 'Rp ' + (Math.round((harga * 1.009))).toLocaleString('id-ID');
                 }
                 if (ovo !== null) {
                     ovo.innerHTML = 'Rp ' + (Math.round(harga * 1.03)).toLocaleString('id-ID');
@@ -537,7 +535,7 @@ function get_price(id = null) {
                     ovod.innerHTML = 'Rp ' + (Math.round(harga * 1.0167)).toLocaleString('id-ID');
                 }
                 if (danad !== null) {
-                    danad.innerHTML = 'Rp ' + (Math.round(harga * 1.0167)).toLocaleString('id-ID');
+                    danad.innerHTML = 'Rp ' + (Math.round(harga * 1.017)).toLocaleString('id-ID');
                 }
                 if (shopeed !== null) {
                     shopeed.innerHTML = 'Rp ' + (Math.round(harga * 1.04)).toLocaleString('id-ID');

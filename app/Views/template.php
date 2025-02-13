@@ -446,7 +446,6 @@
                                     <ul class="menu-list">
                                         <li><a href="<?= base_url(); ?>/" style="text-decoration: none;">Halaman Utama</a></li>
                                         <li><a href="<?= base_url(); ?>/payment" style="text-decoration: none;">Cek Pesanan</a></li>
-
                                         <li><a href="<?= base_url(); ?>/syarat-ketentuan" style="text-decoration: none;">Syarat & Ketentuan</a></li>
                                     </ul>
                                 </div>

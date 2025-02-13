@@ -127,14 +127,23 @@ class AyolinxService
     $method = 'POST';
     $urlSignature = '/direct-debit/core/v1/debit/payment-host-to-host';
     $client_secret = $this->M_Base->u_get('ayolinx-secret');
+    print_r('client secret : '. $client_secret);
+    echo "</br>";
     $token = $this->get_token();
+    print_r('token : '. $token);
+    echo "</br>"; 
     $body = $data;
     $hash = hash('sha256',json_encode($body));
     $hexEncodedHash = strtolower($hash);
     $data = "{$method}:{$urlSignature}:{$token}:{$hexEncodedHash}:{$timestamp}";  
+    print_r('data : '. $data);
+    echo "</br>";  
     $signature = base64_encode(hash_hmac('sha512', $data, $client_secret, true));
+    print_r('signature : '. $signature);
+    echo "</br>";   
 
     $response = $this->base_interface($signature, $timestamp, $token, $urlSignature, $body);
+
     return $response;
   }
 
