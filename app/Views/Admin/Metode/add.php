@@ -90,7 +90,7 @@
 													<div class="form-group row">
 														<label class="col-form-label col-md-4 text-white">Merchant Discount Rate (MDR) <sup>*)</sup></label>
 														<div class="col-md-8">
-															<input type="text" class="form-control" autocomplete="off" name="mdr_rate" placeholder="1.00156"/>
+															<input type="text" class="form-control" autocomplete="off" name="mdr_rate" placeholder="0.17%"/>
 															<span class="text-sm" style="font-size: 10px;color:red;"><sup>*)</sup>Optional jika ada</span>
 														</div>
 													</div>
