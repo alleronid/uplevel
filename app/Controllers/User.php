@@ -161,8 +161,9 @@ class User extends BaseController {
                                 $amount = $data_post['nominal'] + $uniq;
                                 $biaya_admin = 0;
                                 if ($method[0]['provider'] == 'Ayolinx') {
+                                    $rate = number_format(1 + ($method[0]['mdr_rate'] / 100), 3, '.', '');
                                     if (strcasecmp($method[0]['method'], 'QRIS') == 0) {
-                                        $price = round(($amount * 1.009));
+                                        $price = round(($amount * $rate));
                                         $biaya_admin = max(0, $price - $amount);
                                         $body = [
                                             "partnerReferenceNo" => $topup_id,
@@ -188,7 +189,7 @@ class User extends BaseController {
                                             return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
                                         }
                                     } elseif (strcasecmp($method[0]['method'], 'DANA') == 0) {
-                                        $price = ceil($amount * 1.017);
+                                        $price = ceil($amount * $rate);
                                         $biaya_admin = max(0, $price - $amount);
                                         $body = [
                                             "partnerReferenceNo" => $topup_id,

@@ -2,9 +2,6 @@
 			
 			<?php $this->section('css'); ?>
 			<style>
-			    p {
-    color: #000 !important;
-}
 .card {
     background-color: transparent !important;
 }

@@ -1096,8 +1096,11 @@ class Games extends BaseController
                                             $fee = ceil($fee);
                                             $price = ceil($price);
                                             if ($method[0]['provider'] == 'Ayolinx') {
+                                                //rate mdr
+                                                $rate = number_format(1 + ($method[0]['mdr_rate'] / 100), 3, '.', '');
+                                                
                                                 if (strcasecmp($method[0]['method'], 'QRIS') == 0) {
-                                                    $price = round(($product_price * 1.009));
+                                                    $price = round(($product_price * $rate));
                                                     $body = [
                                                         "partnerReferenceNo" => $order_id,
                                                         "amount" => [
@@ -1124,7 +1127,7 @@ class Games extends BaseController
                                                         return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
                                                     }
                                                 } elseif (strcasecmp($method[0]['method'], 'DANA') == 0) {
-                                                    $price = ceil($product_price * 1.07);
+                                                    $price = ceil($product_price * $rate);
                                                     $body = [
                                                             "partnerReferenceNo" => $order_id,
                                                             "validUpTo" => "1746249942",
@@ -1323,7 +1326,7 @@ class Games extends BaseController
                         if (!isset($accordion_data[$method['type']])) {
                             $accordion_data[$method['type']] = [];
                         }
-                        array_push($accordion_data[$method['type']], array('method' => $method['method'], 'image' => $method['image'], 'id' => $method['id'], 'code' => $method['code']));
+                        array_push($accordion_data[$method['type']], array('mdr_rate' => $method['mdr_rate'], 'method' => $method['method'], 'image' => $method['image'], 'id' => $method['id'], 'code' => $method['code']));
                     }
 
                     $category_id = [];
@@ -1484,11 +1487,11 @@ class Games extends BaseController
                             ]);
 
                             $real_price = count($price) == 1 ? $price[0]['price'] : $product[0]['price'];
-
+                            $rate = number_format(1 + ($method[0]['mdr_rate'] / 100), 3, '.', '');
                             if (strcasecmp($method[0]['method'], 'QRIS') == 0) {
-                                $totalPembayaran = round(($real_price * 1.009));
+                                $totalPembayaran = round(($real_price * $rate));
                             } elseif (strcasecmp($method[0]['method'], 'DANA') == 0) {
-                                $totalPembayaran = ceil($real_price * 1.017);
+                                $totalPembayaran = ceil($real_price * $rate);
                             }
 
                             $biaya_admin = max(0, $totalPembayaran - $real_price);

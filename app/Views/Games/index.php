@@ -316,6 +316,7 @@ button.accordion-button {
                                                             <div class="col-8 ">
                                                                 <div class="ml-2 mt-1 text-right">
                                                                     <b class="mb-2" style="font-weight: 600; font-size: 14px;" id="price-method-<?= $method['code']; ?>"></b>
+                                                                    <input value="<?= $method['mdr_rate']; ?>" id="rate-<?= $method['code']; ?>" hidden/>
                                                                 </div>
                                                             </div>
                                                             <div style="font-size: 12px;" class="col-12">
@@ -487,12 +488,16 @@ function get_price(id = null) {
                 var alfamartd = document.getElementById("price-method-FT");
                 var mandirid = document.getElementById("price-method-M1");
 
+                const mdrQris = $('#rate-BNC_QRIS').val()
+                const mdrDana = $('#rate-DANA').val()
+
                 if (balance !== null) {
                     balance.innerHTML = 'Rp ' + (Math.round((harga))).toLocaleString('id-ID');
                 }
 
                 if (qrisc !== null) {
-                    qrisc.innerHTML = 'Rp ' + (Math.round((harga * 1.009))).toLocaleString('id-ID');
+                    let rate = (1 + (mdrQris / 100)).toFixed(3);
+                    qrisc.innerHTML = 'Rp ' + (Math.round((harga * rate))).toLocaleString('id-ID');
                 }
                 if (ovo !== null) {
                     ovo.innerHTML = 'Rp ' + (Math.round(harga * 1.03)).toLocaleString('id-ID');
@@ -535,7 +540,8 @@ function get_price(id = null) {
                     ovod.innerHTML = 'Rp ' + (Math.round(harga * 1.0167)).toLocaleString('id-ID');
                 }
                 if (danad !== null) {
-                    danad.innerHTML = 'Rp ' + (Math.round(harga * 1.017)).toLocaleString('id-ID');
+                    let rate = (1 + (mdrDana / 100)).toFixed(3);
+                    danad.innerHTML = 'Rp ' + (Math.round(harga * rate)).toLocaleString('id-ID');
                 }
                 if (shopeed !== null) {
                     shopeed.innerHTML = 'Rp ' + (Math.round(harga * 1.04)).toLocaleString('id-ID');
