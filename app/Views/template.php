@@ -414,7 +414,9 @@
 									        <a class="dropdown-item text-white <?= $menu_active == 'hpmagicwheel' ? 'active' : ''; ?>" style="background-color:var(--warna_3);" href="<?= base_url(); ?>/hpmagicwheel">HP Magic Wheel</a>
 									    </div>
 								</div>
+                                <?php if ($menu_active === 'Login'): ?> 
                                 <a class="nav-item nav-link <?= $menu_active == 'Login' ? 'active' : ''; ?>" href="<?= base_url(); ?>/login">Login</a>
+                                <?php endif ?> 
                                 <?php if ($admin !== false): ?>
                                 <a class="nav-item nav-link" href="<?= base_url(); ?>/admin">Administrator</a>
                                 <?php endif ?>
