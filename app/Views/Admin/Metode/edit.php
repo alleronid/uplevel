@@ -104,6 +104,13 @@
 															<span class="text-sm" style="font-size: 10px;color:red;"><sup>*)</sup>Optional jika ada</span>
 														</div>
 													</div>
+													<div class="form-group row">
+														<label class="col-form-label col-md-4 text-white"> Amount Fee <sup>*)</sup></label>
+														<div class="col-md-8">
+															<input type="text" class="form-control" autocomplete="off" name="amount_fee" value="<?= $method['amount_fee']; ?>%">
+															<span class="text-sm" style="font-size: 10px;color:red;"><sup>*)</sup>Optional jika ada</span>
+														</div>
+													</div>
 													<a href="<?= base_url(); ?>/admin/metode" class="btn btn-warning float-left">Kembali</a>
 													<div class="text-right">
 														<button class="btn text-white" type="reset">Batal</button>
