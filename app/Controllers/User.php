@@ -203,7 +203,7 @@ class User extends BaseController {
                                             "urlParams" => [
                                                 [
                                                     "type" => "PAY_RETURN",
-                                                    "url" => base_url() . '/payment/' . $topup_id
+                                                    "url" => base_url() . '/user/topup/' . $topup_id
                                                 ],
                                                 [
                                                     "type" => "NOTIFICATION",

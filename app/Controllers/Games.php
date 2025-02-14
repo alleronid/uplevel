@@ -1138,7 +1138,7 @@ class Games extends BaseController
                                                             "urlParams" => [
                                                                 [
                                                                     "type" => "PAY_RETURN",
-                                                                    "url" => base_url() . '/payment/' . $order_id
+                                                                    "url" => base_url() . '/user/' . $order_id
                                                                 ],
                                                                 [
                                                                     "type" => "NOTIFICATION",
@@ -1165,12 +1165,12 @@ class Games extends BaseController
                                                             return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
                                                         }
                                                 } elseif (strcasecmp($method[0]['method'], 'BNI VIRTUAL ACCOUNT') == 0){
-                                                    $price = ceil($product_price + ($product_price * 0.002) + 4000);
+                                                    $price = ceil($product_price + ($product_price * $rate) + $method[0]['amount_fee']);
                                                     $number = $this->ayolinxService->customerNo();
                                                     $body = [
                                                             "partnerServiceId" => AyolinxEnums::BNI_SB,
                                                             "customerNo" => AyolinxEnums::BNI_SB.$number,
-                                                            // "virtualAccountNo" => AyolinxEnums::BNI_SB."0169",
+                                                            "virtualAccountNo" => AyolinxEnums::BNI_SB."0169",
                                                             "virtualAccountName" =>  $username,
                                                             "trxId" => $order_id,
                                                             "virtualAccountTrxType" => "C",
@@ -1197,12 +1197,12 @@ class Games extends BaseController
                                                             return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
                                                         }
                                                 } elseif (strcasecmp($method[0]['method'], 'CIMB VIRTUAL ACCOUNT') == 0){
-                                                    $price = ceil($product_price + ($product_price * 0.002) + 4000);
+                                                    $price = ceil($product_price + ($product_price * $rate) + $method[0]['amount_fee']);
                                                     $number = $this->ayolinxService->customerNo();
                                                     $body = [
                                                             "partnerServiceId" => AyolinxEnums::CIMB_SB,
                                                             "customerNo" => AyolinxEnums::CIMB_SB.$number,
-                                                            // "virtualAccountNo" => AyolinxEnums::BNI_SB."0169",
+                                                            "virtualAccountNo" => AyolinxEnums::CIMB_SB."0169",
                                                             "virtualAccountName" =>  $username,
                                                             "trxId" => $order_id,
                                                             "virtualAccountTrxType" => "C",
@@ -1212,6 +1212,39 @@ class Games extends BaseController
                                                         ],
                                                         "additionalInfo" => [
                                                             "channel" => AyolinxEnums::VACIMB
+                                                        ]
+                                                    ];
+
+                                                    $result = $this->ayolinxService->generateVA($body);
+                                                    $result = json_decode($result, true);
+                                                    print_r($result);die();
+                                                    if ($result) {
+                                                        if ($result['responseCode'] == AyolinxEnums::SUCCESS_VA_BNI) {
+                                                            $payment_code = $result['virtualAccountData']['virtualAccountNo'];
+                                                            } else {
+                                                                $this->session->setFlashdata('error', 'Result : ' . $result['message']);
+                                                                return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
+                                                            }
+                                                        } else {
+                                                            $this->session->setFlashdata('error', 'Gagal terkoneksi ke ayolinx');
+                                                            return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
+                                                        }
+                                                }elseif (strcasecmp($method[0]['method'], 'MANDIRI VIRTUAL ACCOUNT') == 0){
+                                                    $price = ceil($product_price + ($product_price * $rate) + $method[0]['amount_fee']);
+                                                    $number = $this->ayolinxService->customerNo();
+                                                    $body = [
+                                                            "partnerServiceId" => AyolinxEnums::MANDIRI_SB,
+                                                            "customerNo" => AyolinxEnums::MANDIRI_SB.$number,
+                                                            "virtualAccountNo" => AyolinxEnums::MANDIRI_SB."666",
+                                                            "virtualAccountName" =>  $username,
+                                                            "trxId" => $order_id,
+                                                            "virtualAccountTrxType" => "C",
+                                                            "totalAmount" => [
+                                                              "value" => $price,
+                                                              "currency" => "IDR"
+                                                        ],
+                                                        "additionalInfo" => [
+                                                            "channel" => AyolinxEnums::VAMANDIRI
                                                         ]
                                                     ];
 
@@ -1389,7 +1422,7 @@ class Games extends BaseController
                         if (!isset($accordion_data[$method['type']])) {
                             $accordion_data[$method['type']] = [];
                         }
-                        array_push($accordion_data[$method['type']], array('mdr_rate' => $method['mdr_rate'], 'method' => $method['method'], 'image' => $method['image'], 'id' => $method['id'], 'code' => $method['code']));
+                        array_push($accordion_data[$method['type']], array('mdr_rate' => $method['mdr_rate'], 'amount_fee' => $method['amount_fee'] ,'method' => $method['method'], 'image' => $method['image'], 'id' => $method['id'], 'code' => $method['code']));
                     }
 
                     $category_id = [];

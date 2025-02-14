@@ -13,12 +13,15 @@ class AyolinxEnums
   const EWALLET = 'EMONEY_DANA_SNAP';
   const VABNI = 'VIRTUAL_ACCOUNT_BNI';
   const VACIMB = 'VIRTUAL_ACCOUNT_CIMB';
+  const VAMANDIRI = 'VIRTUAL_ACCOUNT_MANDIRI';
 
   //partnerID
   const BNI_SB = "98829172";
   const BNI_PROD = "98828222";
   const CIMB_SB = "2056";
   const CIMB_PROD = "2056";
+  const MANDIRI_SB = "666";
+  const MANDIRI_PROD = "999";
 
   //status code 
   const SUCCESS_CODE = 00;

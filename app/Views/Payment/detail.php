@@ -100,6 +100,7 @@
     									<?php if ( in_array($orders['method_code'], array('QRIS')) ) : ?>
     								    <div class="pb-4"><b> SCAN QR CODE dibawah ini </b><br>
     									     <img src="<?= $orders['payment_code']; ?>" width="20px" height="20" alt="" title="" />
+													 <h2 id="timer" style="color:white;">Berlaku sampai 5:00</h2>
     									</div>
     									<?php else: ?>
     									<div class="pb-4"> Klik tombol untuk melakukan Pembayaran <br>
@@ -922,6 +923,30 @@
 		navigator.clipboard.writeText('<?= $orders['ket']; ?>');
 
 		Swal.fire('Berhasil', 'Keterangan / No Token PLN / Kode Voucher', 'success');}
+
+		let timeLeft = 300;
+
+		function startTimer() {
+            let timerDisplay = document.getElementById("timer");
+
+            let countdown = setInterval(function () {
+                let minutes = Math.floor(timeLeft / 60);
+                let seconds = timeLeft % 60;
+                seconds = seconds < 10 ? "0" + seconds : seconds;
+
+                timerDisplay.innerHTML = minutes + ":" + seconds;
+
+                if (timeLeft <= 0) {
+                    clearInterval(countdown);
+                    timerDisplay.innerHTML = "Waktu Habis!";
+                    alert("Waktu telah habis!");
+                }
+
+                timeLeft--;
+            }, 1000);
+        }
+
+        window.onload = startTimer;
 </script>
 
 
