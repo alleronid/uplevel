@@ -484,7 +484,7 @@ function get_price(id = null) {
                 var dvabri = document.getElementById("price-method-BR");
                 var vamayd = document.getElementById("price-method-VA");
                 var vapermatad = document.getElementById("price-method-BT");
-                var vacimbd = document.getElementById("price-method-B1");
+                var vacimbd = document.getElementById("price-method-CIMBVA");
                 var alfamartd = document.getElementById("price-method-FT");
                 var mandirid = document.getElementById("price-method-M1");
 
@@ -565,7 +565,8 @@ function get_price(id = null) {
                     vapermatad.innerHTML = 'Rp ' + (Math.round(harga + 3000)).toLocaleString('id-ID');
                 }
                 if (vacimbd !== null) {
-                    vacimbd.innerHTML = 'Rp ' + (Math.round(harga + 3000)).toLocaleString('id-ID');
+                    console.log(harga);
+                    vacimbd.innerHTML = 'Rp ' + (Math.round((harga * 0.002) + harga  + 4000)).toLocaleString('id-ID');
                 }
                 if (alfamartd !== null) {
                     alfamartd.innerHTML = 'Rp ' + (Math.round(harga + 2500)).toLocaleString('id-ID');

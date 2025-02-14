@@ -12,10 +12,13 @@ class AyolinxEnums
   const QRIS = 'BNC_QRIS';
   const EWALLET = 'EMONEY_DANA_SNAP';
   const VABNI = 'VIRTUAL_ACCOUNT_BNI';
+  const VACIMB = 'VIRTUAL_ACCOUNT_CIMB';
 
   //partnerID
   const BNI_SB = "98829172";
   const BNI_PROD = "98828222";
+  const CIMB_SB = "2056";
+  const CIMB_PROD = "2056";
 
   //status code 
   const SUCCESS_CODE = 00;
