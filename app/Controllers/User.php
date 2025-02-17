@@ -156,13 +156,16 @@ class User extends BaseController {
                         if (count($method) === 1) {
                             if ($method[0]['status'] == 'On') {
 
+                                
+
                                 $topup_id = 'TPP'.date('Ymd') . rand(0000,9999);
                                 $uniq = $method[0]['uniq'] == 'Y' ? rand(111,999) : 0;
                                 $amount = $data_post['nominal'] + $uniq;
                                 $biaya_admin = 0;
                                 if ($method[0]['provider'] == 'Ayolinx') {
+                                    $rate = number_format(1 + ($method[0]['mdr_rate'] / 100), 3, '.', '');
                                     if (strcasecmp($method[0]['method'], 'QRIS') == 0) {
-                                        $price = round(($amount * 1.009));
+                                        $price = round(($amount * $rate));
                                         $biaya_admin = max(0, $price - $amount);
                                         $body = [
                                             "partnerReferenceNo" => $topup_id,
@@ -188,7 +191,7 @@ class User extends BaseController {
                                             return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
                                         }
                                     } elseif (strcasecmp($method[0]['method'], 'DANA') == 0) {
-                                        $price = ceil($amount * 1.017);
+                                        $price = ceil($amount * $rate);
                                         $biaya_admin = max(0, $price - $amount);
                                         $body = [
                                             "partnerReferenceNo" => $topup_id,
@@ -200,7 +203,7 @@ class User extends BaseController {
                                             "urlParams" => [
                                                 [
                                                     "type" => "PAY_RETURN",
-                                                    "url" => base_url() . '/payment/' . $topup_id
+                                                    "url" => base_url() . '/user/topup/' . $topup_id
                                                 ],
                                                 [
                                                     "type" => "NOTIFICATION",
@@ -219,6 +222,74 @@ class User extends BaseController {
                                                 $payment_code = $result['webRedirectUrl'];
                                                 } else {
                                                     $this->session->setFlashdata('error', 'Channel ini sedang dalam perbaikan ' . $result['responseMessage'].'('. $result['responseCode'].')');
+                                                    return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
+                                                }
+                                            } else {
+                                                $this->session->setFlashdata('error', 'Gagal terkoneksi ke ayolinx');
+                                                return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
+                                            }
+                                    } elseif (strcasecmp($method[0]['method'], 'BNI VIRTUAL ACCOUNT') == 0){
+                                        $price = ceil($amount + ($amount * 0.002) + 4000);
+                                        $biaya_admin = max(0, $price - $amount);
+                                        $number = $this->ayolinxService->customerNo();
+                                        $username = $this->users['username'];
+                                        $body = [
+                                                "partnerServiceId" => AyolinxEnums::BNI_SB,
+                                                "customerNo" => AyolinxEnums::BNI_SB.$number,
+                                                // "virtualAccountNo" => AyolinxEnums::BNI_SB."0169",
+                                                "virtualAccountName" =>  $username,
+                                                "trxId" => $topup_id,
+                                                "virtualAccountTrxType" => "C",
+                                                "totalAmount" => [
+                                                  "value" => $price,
+                                                  "currency" => "IDR"
+                                            ],
+                                            "additionalInfo" => [
+                                                "channel" => AyolinxEnums::VABNI
+                                            ]
+                                        ];
+
+                                        $result = $this->ayolinxService->generateVA($body);
+                                        $result = json_decode($result, true);
+                                        if ($result) {
+                                            if ($result['responseCode'] == AyolinxEnums::SUCCESS_VA_BNI) {
+                                                $payment_code = $result['virtualAccountData']['virtualAccountNo'];
+                                                } else {
+                                                    $this->session->setFlashdata('error', 'Result : ' . $result['message']);
+                                                    return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
+                                                }
+                                            } else {
+                                                $this->session->setFlashdata('error', 'Gagal terkoneksi ke ayolinx');
+                                                return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
+                                            }
+                                    } elseif (strcasecmp($method[0]['method'], 'BNI VIRTUAL ACCOUNT') == 0){
+                                        $price = ceil($amount + ($amount * 0.002) + 4000);
+                                        $biaya_admin = max(0, $price - $amount);
+                                        $number = $this->ayolinxService->customerNo();
+                                        $username = $this->users['username'];
+                                        $body = [
+                                                "partnerServiceId" => AyolinxEnums::CIMB_SB,
+                                                "customerNo" => AyolinxEnums::CIMB_SB.$number,
+                                                // "virtualAccountNo" => AyolinxEnums::BNI_SB."0169",
+                                                "virtualAccountName" =>  $username,
+                                                "trxId" => $topup_id,
+                                                "virtualAccountTrxType" => "C",
+                                                "totalAmount" => [
+                                                  "value" => $price,
+                                                  "currency" => "IDR"
+                                            ],
+                                            "additionalInfo" => [
+                                                "channel" => AyolinxEnums::VACIMB
+                                            ]
+                                        ];
+
+                                        $result = $this->ayolinxService->generateVA($body);
+                                        $result = json_decode($result, true);
+                                        if ($result) {
+                                            if ($result['responseCode'] == AyolinxEnums::SUCCESS_VA_BNI) {
+                                                $payment_code = $result['virtualAccountData']['virtualAccountNo'];
+                                                } else {
+                                                    $this->session->setFlashdata('error', 'Result : ' . $result['message']);
                                                     return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
                                                 }
                                             } else {
@@ -262,10 +333,20 @@ class User extends BaseController {
                         }
                     }
                 }
+                $all_method = $this->M_Base->data_where('method', 'status', 'On');
+                $accordion_data = [];
 
+                foreach ($all_method as $method) {
+                    if (!isset($accordion_data[$method['type']])) {
+                        $accordion_data[$method['type']] = [];
+                }
+                    array_push($accordion_data[$method['type']], array('mdr_rate' => $method['mdr_rate'], 'amount_fee' => $method['amount_fee'] ,'method' => $method['method'], 'image' => $method['image'], 'id' => $method['id'], 'code' => $method['code']));
+                }
+                
                 $data = array_merge($this->base_data, [
                     'title' => 'Top Up',
                     'method' => $this->M_Base->data_where('method', 'status', 'On'),
+                    'accordion_data' => $accordion_data,
                 ]);
 
                 return view('User/Topup/index', $data);

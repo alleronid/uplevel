@@ -52,7 +52,7 @@
             <div class="row justify-content-center">
                 <div class="col-lg-6 col-md-9 col-sm-9">
                     <div class="text-center mb-3">
-                        <img src="<?= base_url(); ?>/assets/images/<?= $web['logo']; ?>" width="200" height="200">
+                        <img src="<?= base_url(); ?>/assets/images/<?= $web['logo']; ?>" width="350" height="120">
                         <h5 class="text-white mt-3 mb-1">Kalkulator Magic Wheel</h5>
                         <p class="text-white">Kalkulator Magic Wheel berfungsi untuk mengetahui total maksimal diamond
                         yang kamu butuhkan untuk mendapatkan skin LEGEND.<br></p>
@@ -70,7 +70,7 @@
                                         id="myRange" onchange="show_value2(this.value)">
                                     <span color="white">Membutuhkan Maksimal : </span><span id="slider_value2"
                                         style="color:white;font-weight:bold;"></span>
-                                    <img src="<?= base_url(); ?>/assets/images/diamond-ml.png" width="20" height="20">
+                                    <img src="<?= base_url(); ?>/assets/images/product/diamond-ml.png" width="20" height="20">
                                     <br>
                                 </div>
                                 <br>
