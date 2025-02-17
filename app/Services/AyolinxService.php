@@ -43,7 +43,6 @@ class AyolinxService
 
     $headers = array_merge($defaultHeaders, $headers);
     $baseUrl =  AyolinxEnums::URL_DEV.$url;
-
 		curl_setopt($ch, CURLOPT_URL, $baseUrl);
 		curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
@@ -123,7 +122,24 @@ class AyolinxService
   }
 
   public function walletDana($data = []){
-    $timestamp = date('c');
+    $timestamp = $this->timestamp;
+    $method = 'POST';
+    $urlSignature = '/direct-debit/core/v1/debit/payment-host-to-host';
+    $client_secret = $this->M_Base->u_get('ayolinx-secret');
+    $token = $this->get_token();
+    $body = $data;
+    $hash = hash('sha256',json_encode($body));
+    $hexEncodedHash = strtolower($hash);
+    $data = "{$method}:{$urlSignature}:{$token}:{$hexEncodedHash}:{$timestamp}";  
+    $signature = base64_encode(hash_hmac('sha512', $data, $client_secret, true));
+
+    $response = $this->base_interface($signature, $timestamp, $token, $urlSignature, $body);
+
+    return $response;
+  }
+
+  public function walletDanaTest($data = []){
+    $timestamp = $this->timestamp;
     $method = 'POST';
     $urlSignature = '/direct-debit/core/v1/debit/payment-host-to-host';
     $client_secret = $this->M_Base->u_get('ayolinx-secret');
