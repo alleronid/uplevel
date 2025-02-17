@@ -226,7 +226,7 @@ button.accordion-button {
                                     <h2 class="accordion-header mb-0" id="heading-saldo">
                                         <button class="accordion-button collapsed" style="background-color: var(--warna);height: 0;padding: 20px;border-radius: 7px;" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-saldo" aria-expanded="false" aria-controls="collapse-saldo">
                                             <div class="left text-white">
-                                                <i class="fa fa-address-card"></i> Saldo Akun (Member/Reseller)
+                                                <i class="fa fa-address-card"></i> Point Akun (Member/Reseller)
                                             </div>
                                         </button>
                                     </h2>
@@ -240,7 +240,7 @@ button.accordion-button {
                                                         <div class="row">
                                                             <div class="col-4">
                                                                 <div class="mr-2 pb-0">
-                                                                    <img src="<?= base_url(); ?>/assets/images/method/balance.png" class="rounded mb-1" style="height: 40px;width:auto">
+                                                                    <img src="<?= base_url(); ?>/assets/images/method/alerron-point.png" class="rounded mb-1" style="height: 40px;width:auto">
                                                                 </div>
                                                             </div>
                                                             <div class="col-8 ">
@@ -249,7 +249,7 @@ button.accordion-button {
                                                                 </div>
                                                             </div>
                                                             <div style="font-size: 12px;" class="col-12 ">
-                                                                <b class="d-block mb-2 mx-1">Saldo Akun
+                                                                <b class="d-block mb-2 mx-1">Point
                                                                     (Member/Reseller)</b>
                                                                 <b class="d-block"></b>
                                                             </div>
@@ -260,7 +260,7 @@ button.accordion-button {
                                         </div>
                                     </div>
                                     <div class="p-2 text-end " style="border-radius: 0 0 6px 6px;background: #fff;">
-                                        <img src="<?= base_url(); ?>/assets/images/method/balance.png" alt="" height="20" style="border-radius:5px" style="border-radius:5px">
+                                        <img src="<?= base_url(); ?>/assets/images/method/alleron-method1.png" alt="" height="20" style="border-radius:5px" style="border-radius:5px">
                                     </div>
                                 </div>
                             </div>
@@ -316,6 +316,8 @@ button.accordion-button {
                                                             <div class="col-8 ">
                                                                 <div class="ml-2 mt-1 text-right">
                                                                     <b class="mb-2" style="font-weight: 600; font-size: 14px;" id="price-method-<?= $method['code']; ?>"></b>
+                                                                    <input value="<?= $method['mdr_rate']; ?>" id="rate-<?= $method['code']; ?>" hidden/>
+                                                                    <input value="<?= $method['amount_fee']; ?>" id="fee-<?= $method['code']; ?>" hidden/>
                                                                 </div>
                                                             </div>
                                                             <div style="font-size: 12px;" class="col-12">
@@ -483,17 +485,52 @@ function get_price(id = null) {
                 var dvabri = document.getElementById("price-method-BR");
                 var vamayd = document.getElementById("price-method-VA");
                 var vapermatad = document.getElementById("price-method-BT");
-                var vacimbd = document.getElementById("price-method-B1");
+                var vacimbd = document.getElementById("price-method-CIMBVA");
                 var alfamartd = document.getElementById("price-method-FT");
                 var mandirid = document.getElementById("price-method-M1");
 
+                const mdrQris = $('#rate-BNC_QRIS').val()
+                const mdrDana = $('#rate-DANA').val()
+                const mdrBNI = $('#rate-BNIVA').val();
+                const mdrCIMB = $('#rate-CIMBVA').val();
+                const mdrMANDIRI = $('#rate-MANDIRIVA').val();
+                
+                const feeBNI = $('#fee-BNIVA').val()
+                const feeCIMB = $('#fee-CIMBVA').val()
+                const feeMANDIRI = $('#fee-MANDIRIVA').val()
+
+                //used
                 if (balance !== null) {
                     balance.innerHTML = 'Rp ' + (Math.round((harga))).toLocaleString('id-ID');
                 }
 
                 if (qrisc !== null) {
-                    qrisc.innerHTML = 'Rp ' + (Math.round((harga * 1.009))).toLocaleString('id-ID');
+                    let rate = (1 + (mdrQris / 100)).toFixed(3);
+                    qrisc.innerHTML = 'Rp ' + (Math.round((harga * rate))).toLocaleString('id-ID');
                 }
+
+                if (danad !== null) {
+                    let rate = (1 + (mdrDana / 100)).toFixed(3);
+                    danad.innerHTML = 'Rp ' + (Math.round(harga * rate)).toLocaleString('id-ID');
+                }
+
+                if (vamandiri !== null) {
+                    const rate = (mdrMANDIRI/100).toFixed(3)
+                    vamandiri.innerHTML = 'Rp ' + (Math.round((harga * parseFloat(rate)) + harga  + parseInt(feeMANDIRI))).toLocaleString('id-ID');
+                }
+
+                if (vabni !== null) {
+                    const rate = (mdrBNI/100).toFixed(3)
+                    vabni.innerHTML = 'Rp ' + (Math.round((harga * parseFloat(rate)) + harga  + parseInt(feeBNI))).toLocaleString('id-ID');
+                }
+
+                if (vacimbd !== null) {
+                    const rate = (mdrCIMB/100).toFixed(3)
+                    vacimbd.innerHTML = 'Rp ' + (Math.round((harga * parseFloat(rate)) + harga  + parseInt(feeCIMB))).toLocaleString('id-ID');
+                }
+
+
+                //still unused 
                 if (ovo !== null) {
                     ovo.innerHTML = 'Rp ' + (Math.round(harga * 1.03)).toLocaleString('id-ID');
                 }
@@ -506,15 +543,11 @@ function get_price(id = null) {
                 if (vabca !== null) {
                     vabca.innerHTML = 'Rp ' + (Math.round(harga + 5500)).toLocaleString('id-ID');
                 }
-                if (vabni !== null) {
-                    vabni.innerHTML = 'Rp ' + (Math.round(harga + 4250)).toLocaleString('id-ID');
-                }
+                
                 if (vapermata !== null) {
                     vapermata.innerHTML = 'Rp ' + (Math.round(harga + 4250)).toLocaleString('id-ID');
                 }
-                if (vamandiri !== null) {
-                    vamandiri.innerHTML = 'Rp ' + (Math.round(harga + 4250)).toLocaleString('id-ID');
-                }
+               
                 if (vabri !== null) {
                     vabri.innerHTML = 'Rp ' + (Math.round(harga + 4250)).toLocaleString('id-ID');
                 }
@@ -534,9 +567,7 @@ function get_price(id = null) {
                 if (ovod !== null) {
                     ovod.innerHTML = 'Rp ' + (Math.round(harga * 1.0167)).toLocaleString('id-ID');
                 }
-                if (danad !== null) {
-                    danad.innerHTML = 'Rp ' + (Math.round(harga * 1.017)).toLocaleString('id-ID');
-                }
+                
                 if (shopeed !== null) {
                     shopeed.innerHTML = 'Rp ' + (Math.round(harga * 1.04)).toLocaleString('id-ID');
                 }
@@ -558,9 +589,7 @@ function get_price(id = null) {
                 if (vapermatad !== null) {
                     vapermatad.innerHTML = 'Rp ' + (Math.round(harga + 3000)).toLocaleString('id-ID');
                 }
-                if (vacimbd !== null) {
-                    vacimbd.innerHTML = 'Rp ' + (Math.round(harga + 3000)).toLocaleString('id-ID');
-                }
+               
                 if (alfamartd !== null) {
                     alfamartd.innerHTML = 'Rp ' + (Math.round(harga + 2500)).toLocaleString('id-ID');
                 }

@@ -123,7 +123,7 @@
 					                        <div class="col-sm-6">
 					                            <div class="pb-4"> No. Transaksi 
 					                            	<h5>
-					                            		TP<?= $topup['topup_id']; ?> <i class="fa fa-clone pl-2 clip" onclick="copy_trxaku()" data-clipboard-text="TP<?= $topup['topup_id']; ?>"></i>
+					                            		TP<?= $topup['topup_id']; ?> <i class="fa fa-clone pl-2 clip" onclick="copy_trxaku()" data-clipboard-text="<?= $topup['topup_id']; ?>"></i>
 					                                </h5>
 					                            </div>
 					                            <div class="pb-4"> Waktu Transaksi <h5><?= $topup['date_create']; ?></h5>

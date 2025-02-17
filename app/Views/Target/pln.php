@@ -5,7 +5,7 @@
 </style>
 
 <h5 style="margin-left: 45px; margin-top: 5px; ">Input No. Pelanggan PLN</h5>
-<h6 style="margin-left: 45px; margin-top: 5px; ">*No Token akan muncul dihalaman Cek Pesanan / Invoice</h5>
+<h6 style="margin-left: 45px; margin-top: 5px;color:white; ">*No Token akan muncul dihalaman Cek Pesanan / Invoice</h5>
 
 <div class="form-row pt-3">
     <div class="col-12">
