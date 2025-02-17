@@ -120,6 +120,10 @@ $routes->match(['get', 'post'], '/sistem/callback/(:any)', 'Sistem::callback/$1'
 
 $routes->match(['get', 'post'], '/generate-pembayaran', 'Ayolinx::generateQris');
 
+$routes->match(['get', 'post'], '/v1.0/access-token/b2b', 'Ayolinx::get_token');
+$routes->match(['get', 'post'], '/v1.0/transfer-va/payment', 'Ayolinx::paymentVACallback');
+$routes->match(['get', 'post'], '/v1.0/qr/qr-mpm-notify', 'Ayolinx::paymentCallback');
+$routes->match(['get', 'post'], '/v1.0/debit/notify', 'Ayolinx::paymentCallback');
 /*
  * --------------------------------------------------------------------
  * Additional Routing

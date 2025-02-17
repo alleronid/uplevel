@@ -351,7 +351,7 @@ class Ayolinx extends BaseController
       $headers = $this->request->getHeaders();
       $headerSign = $headers['X-Signature']->getValue();
 
-      $this->logCallback($body_raw, json_encode(getallheaders()));
+      $this->logCallback($body_raw, json_encode(getallheaders()), 'callback.log');
 
       if (empty($refNo)) {
           throw new Exception('refNo cannot be null!');
@@ -369,23 +369,29 @@ class Ayolinx extends BaseController
           // if not found in orders table then is topup
           $order = $this->M_Base->data_where('topup', 'topup_id', $refNo); 
           $payment_type = 'Topup';
-          $payment_amount = $order->amount ?? 0;
+          $payment_amount = $order[0]['amount'] ?? 0;
       } else{
           $payment_type = 'Order';
-          $payment_amount = $order->price ?? 0;
+          $payment_amount = $order[0]['price'] ?? 0;
       }
 
       if(empty($order) || $payment_amount == 0){
           throw new Exception('Order not found!');
       }
 
-      $check_callback_where['partner_reference_no'] = $body->partnerReferenceNo;
-      $check_callback_where['status'] = 'SUCCESS';
-      $check_callback = $this->M_Base->data_where_2('callback', $check_callback_where);
+      $check_callback = null;
+
+      if (!empty($body->partnerReferenceNo)) {
+          $check_callback_where['partner_reference_no'] = $body->partnerReferenceNo;
+          $check_callback_where['status'] = 'SUCCESS';
+          $check_callback = $this->M_Base->data_where_2('callback', $check_callback_where);
+      }
 
       if (!empty($check_callback)) {
           throw new Exception('Payment already done success!');
       }
+
+      $check_order = null;
 
       $check_order_where['status'] = 'Success';
       $check_order_where[strtolower($payment_type).'_id'] = $refNo;
@@ -417,17 +423,17 @@ class Ayolinx extends BaseController
 
       if ($status_callback == 'SUCCESS') {
           if ($payment_type == 'Topup') {
-              $user = $this->M_Base->data_where('users', 'username', $order->username); 
-              $balance = $user->balance ?? 0;
+              $user = $this->M_Base->data_where('users', 'username', $order[0]['username']); 
+              $balance = $user[0]['balance'] ?? 0;
               $new_balance = $balance + $payment_amount;
 
               $this->M_Base->data_update('users', [
                   'balance' => $new_balance
               ], $user->id);
           }else{
-              $user = $this->M_Base->data_where('users', 'username', $order->username) ?? null; 
+              $user = $this->M_Base->data_where('users', 'username', $order[0]['username']) ?? null; 
               if ($order->method_code == 'Balance' && !empty($user)) {
-                  $balance = $user->balance ?? 0;
+                  $balance = $user[0]['balance'] ?? 0;
                   $new_balance = $balance - $payment_amount;
 
                   $this->M_Base->data_update('users', [
@@ -441,8 +447,30 @@ class Ayolinx extends BaseController
       return json_encode(['status' => 'failed', 'reference_no' => $refNo]);
   }
 
-  private function logCallback($body, $header){
-      $logFile = 'logs/callback.log';
+  public function paymentVACallback(){
+      $body_raw = file_get_contents('php://input');
+      $body = json_decode($body_raw);
+      $headers = $this->request->getHeaders();
+      $this->logCallback($body_raw, json_encode(getallheaders()), 'callbackVA.log');
+
+      $header_timestamp = $headers['X-TIMESTAMP']->getValue();
+      $header_client_key = $headers['X-CLIENT-KEY']->getValue();
+      $header_signature = $headers['X-SIGNATURE']->getValue();
+
+      $token = $this->get_token();
+
+      return json_encode(['status' => 'success']);
+  }
+
+  public function generateAccessTokenVACallback()
+  {
+
+      $timestamp = $_SERVER['HTTP_X_TIMESTAMP'];
+  }
+
+  private function logCallback($body, $header, $log_name = null){
+      $logname = $log_name ?? 'callback.log';
+      $logFile = "logs/$logname";
       $message = "[" . date('Y-m-d H:i:s') . "]: BODY: ".$body ." HEADER: ". $header. PHP_EOL;
 
       file_put_contents($logFile, $message, FILE_APPEND);
