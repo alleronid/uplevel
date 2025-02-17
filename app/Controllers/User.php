@@ -214,14 +214,11 @@ class User extends BaseController {
                                         
                                         $result = $this->ayolinxService->walletDana($body);
                                         $result = json_decode($result, true);
-                                        print_r($body);
-                                        print("<br>");
-                                        print_r($result);die();
                                         if ($result) {
                                             if ($result['responseCode'] == AyolinxEnums::SUCCESS_DANA) {
                                                 $payment_code = $result['webRedirectUrl'];
                                                 } else {
-                                                    $this->session->setFlashdata('error', 'Result : ' . $result['message']);
+                                                    $this->session->setFlashdata('error', 'Channel ini sedang dalam perbaikan ' . $result['responseMessage'].'('. $result['responseCode'].')');
                                                     return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
                                                 }
                                             } else {

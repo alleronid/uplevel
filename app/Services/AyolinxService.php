@@ -42,7 +42,7 @@ class AyolinxService
 		);
 
     $headers = array_merge($defaultHeaders, $headers);
-    $baseUrl =  "https://openapi.ayolinx.id".$url;
+    $baseUrl =  "https://sandbox.ayolinx.id".$url;
 
 		curl_setopt($ch, CURLOPT_URL, $baseUrl);
 		curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
@@ -81,7 +81,7 @@ class AyolinxService
     $curl = curl_init();
 
     curl_setopt_array($curl, array(
-      CURLOPT_URL => 'https://openapi.ayolinx.id' . $url,
+      CURLOPT_URL => 'https://sandbox.ayolinx.id' . $url,
       CURLOPT_RETURNTRANSFER => true,
       CURLOPT_ENCODING => '',
       CURLOPT_MAXREDIRS => 10,
@@ -123,24 +123,33 @@ class AyolinxService
   }
 
   public function walletDana($data = []){
-    $timestamp = date('c');
+    $timestamp = $this->timestamp;
     $method = 'POST';
     $urlSignature = '/direct-debit/core/v1/debit/payment-host-to-host';
     $client_secret = $this->M_Base->u_get('ayolinx-secret');
-    print_r('client secret : '. $client_secret);
-    echo "</br>";
     $token = $this->get_token();
-    print_r('token : '. $token);
-    echo "</br>"; 
     $body = $data;
     $hash = hash('sha256',json_encode($body));
     $hexEncodedHash = strtolower($hash);
     $data = "{$method}:{$urlSignature}:{$token}:{$hexEncodedHash}:{$timestamp}";  
-    print_r('data : '. $data);
-    echo "</br>";  
     $signature = base64_encode(hash_hmac('sha512', $data, $client_secret, true));
-    print_r('signature : '. $signature);
-    echo "</br>";   
+
+    $response = $this->base_interface($signature, $timestamp, $token, $urlSignature, $body);
+
+    return $response;
+  }
+
+  public function walletDanaTest($data = []){
+    $timestamp = $this->timestamp;
+    $method = 'POST';
+    $urlSignature = '/direct-debit/core/v1/debit/payment-host-to-host';
+    $client_secret = $this->M_Base->u_get('ayolinx-secret');
+    $token = $this->get_token();
+    $body = $data;
+    $hash = hash('sha256',json_encode($body));
+    $hexEncodedHash = strtolower($hash);
+    $data = "{$method}:{$urlSignature}:{$token}:{$hexEncodedHash}:{$timestamp}";  
+    $signature = base64_encode(hash_hmac('sha512', $data, $client_secret, true));
 
     $response = $this->base_interface($signature, $timestamp, $token, $urlSignature, $body);
 
