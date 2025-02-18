@@ -442,12 +442,28 @@ class Ayolinx extends BaseController
           $payment_amount = $order[0]['amount'] ?? 0;
       } else{
           $payment_type = 'Order';
-          $payment_amount = $order[0]['amount'] ?? 0;
+          $payment_amount = $order[0]['price'] ?? 0;
       }
 
       if(empty($order) || $payment_amount == 0){
-          throw new Exception('Order not found!');
+          return $this->response->setJSON(['responseCode' => 200560611, 'responseMessage' => 'Order not found!']);
       }
+
+      $callback_id = 'CLB'.date('Ymd') . rand(0000,9999);
+      $callback_data = [
+          'callback_id'                   => $callback_id,
+          'payment_gateway'               => 'Ayolinx',
+          'payment_type'                  => $payment_type,
+          'payment_amount'                => $payment_amount,
+          'status'                        => $status_callback,
+          'partner_reference_no'          => $body->partnerReferenceNo ?? null, // nomor kita
+          'original_reference_no'         => $body->originalReferenceNo ?? null, // nomor ayolink (PG)
+          'original_partner_reference_no' => $body->originalPartnerReferenceNo ?? null, // nomor dana (merchant)
+          'date_create'                   => date('Y-m-d G:i:s'),
+          'request_body'                  => $body_raw,
+      ];
+
+      $this->M_Base->data_insert('callback', $callback_data);
 
       $check_callback = null;
       $check_callback_where['status'] = 'SUCCESS';
@@ -481,22 +497,6 @@ class Ayolinx extends BaseController
           return $this->response->setJSON(['responseCode' => 2005606, 'responseMessage' => 'Successfully']);
       }
     
-      $callback_id = 'CLB'.date('Ymd') . rand(0000,9999);
-      $callback_data = [
-          'callback_id'                   => $callback_id,
-          'payment_gateway'               => 'Ayolinx',
-          'payment_type'                  => $payment_type,
-          'payment_amount'                => $payment_amount,
-          'status'                        => $status_callback,
-          'partner_reference_no'          => $body->partnerReferenceNo ?? null, // nomor kita
-          'original_reference_no'         => $body->originalReferenceNo ?? null, // nomor ayolink (PG)
-          'original_partner_reference_no' => $body->originalPartnerReferenceNo ?? null, // nomor dana (merchant)
-          'date_create'                   => date('Y-m-d G:i:s'),
-          'request_body'                  => $body_raw,
-      ];
-
-      $this->M_Base->data_insert('callback', $callback_data);
-
       header('Content-Type: application/json');
       if ($status_callback == 'SUCCESS') {
           if ($payment_type == 'Topup') {
@@ -579,15 +579,31 @@ class Ayolinx extends BaseController
           // if not found in orders table then is topup
           $order = $this->M_Base->data_where('topup', 'topup_id', $refNo); 
           $payment_type = 'Topup';
+          $payment_amount = $order[0]['amount'] ?? 0;
       } else{
           $payment_type = 'Order';
+          $payment_amount = $order[0]['price'] ?? 0;
       }
-      $payment_amount = $body->paidAmount->value ?? 0;
 
       if(empty($order) || $payment_amount == 0){
           throw new Exception('Order not found!');
       }
 
+      $callback_id = 'CLB'.date('Ymd') . rand(0000,9999);
+      $callback_data = [
+          'callback_id'                   => $callback_id,
+          'payment_gateway'               => 'Ayolinx',
+          'payment_type'                  => $payment_type,
+          'payment_amount'                => $payment_amount,
+          'status'                        => $status_callback,
+          'partner_reference_no'          => $body->trxId ?? null, // nomor kita
+          'original_reference_no'         => $body->paymentRequestId ?? null, // nomor ayolink (PG)
+          'original_partner_reference_no' => $body->additionalInfo->paymentNtb ?? null, // nomor BNI (merchant)
+          'date_create'                   => date('Y-m-d G:i:s', strtotime($body->additionalInfo->paymentTimeIso8601)),
+          'request_body'                  => $body_raw,
+      ];
+
+      $this->M_Base->data_insert('callback', $callback_data);
       $check_callback = null;
 
       if (!empty($body->partnerReferenceNo)) {
@@ -613,22 +629,6 @@ class Ayolinx extends BaseController
       if (!empty($check_order)) {
         return $this->response->setJSON(['responseCode' => 2005606, 'responseMessage' => 'Successfully']);
       }
-
-      $callback_id = 'CLB'.date('Ymd') . rand(0000,9999);
-      $callback_data = [
-          'callback_id'                   => $callback_id,
-          'payment_gateway'               => 'Ayolinx',
-          'payment_type'                  => $payment_type,
-          'payment_amount'                => $payment_amount,
-          'status'                        => $status_callback,
-          'partner_reference_no'          => $body->trxId ?? null, // nomor kita
-          'original_reference_no'         => $body->paymentRequestId ?? null, // nomor ayolink (PG)
-          'original_partner_reference_no' => $body->additionalInfo->paymentNtb ?? null, // nomor BNI (merchant)
-          'date_create'                   => date('Y-m-d G:i:s', strtotime($body->additionalInfo->paymentTimeIso8601)),
-          'request_body'                  => $body_raw,
-      ];
-
-      $this->M_Base->data_insert('callback', $callback_data);
 
       header('Content-Type: application/json');
       if ($status_callback == 'SUCCESS') {
@@ -736,4 +736,3 @@ class Ayolinx extends BaseController
       file_put_contents($logFile, $message, FILE_APPEND);
   }
 }
-
