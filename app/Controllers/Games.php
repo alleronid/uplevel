@@ -1128,9 +1128,11 @@ class Games extends BaseController
                                                     }
                                                 } elseif (strcasecmp($method[0]['method'], 'DANA') == 0) {
                                                     $price = ceil($product_price * $rate);
+                                                    $currentTimestamp = time();
+                                                    $twoMonthsLater = strtotime("+2 months", $currentTimestamp);
                                                     $body = [
                                                             "partnerReferenceNo" => $order_id,
-                                                            "validUpTo" => "1746249942",
+                                                            "validUpTo" => ". $twoMonthsLater.",
                                                             "amount" => [
                                                                 "currency" => "IDR",
                                                                 "value" => $price
