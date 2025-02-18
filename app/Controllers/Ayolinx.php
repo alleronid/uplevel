@@ -463,8 +463,7 @@ class Ayolinx extends BaseController
           'request_body'                  => $body_raw,
       ];
 
-      $a = $this->M_Base->data_insert('callback', $callback_data);
-      print_r($a);die();
+      $this->M_Base->data_insert('callback', $callback_data);
 
       $check_callback = null;
       $check_callback_where['status'] = 'SUCCESS';
