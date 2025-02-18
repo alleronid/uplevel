@@ -140,7 +140,7 @@ class AyolinxService
   }
 
   public function generateVA($data = []){
-    $timestamp = date('c');
+    $timestamp = $this->timestamp;
     $method = 'POST';
     $urlSignature = '/v1.0/transfer-va/create-va';
     $client_secret = $this->M_Base->u_get('ayolinx-secret');
@@ -155,7 +155,6 @@ class AyolinxService
 
     return $response;
   }
-
 
   public function randomNumber(){
     $number = strval(rand(11111111111 ,99999999999));
