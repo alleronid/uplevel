@@ -221,7 +221,7 @@ class User extends BaseController {
                                             if ($result['responseCode'] == AyolinxEnums::SUCCESS_DANA) {
                                                 $payment_code = $result['webRedirectUrl'];
                                                 } else {
-                                                    $this->session->setFlashdata('error', 'Result : ' . $result['responseMessage']);
+                                                    $this->session->setFlashdata('error', 'Result : ' . $result['message']);
                                                     return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
                                                 }
                                             } else {
