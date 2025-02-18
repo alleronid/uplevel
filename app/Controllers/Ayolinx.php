@@ -337,33 +337,35 @@ class Ayolinx extends BaseController
       $signature = $_SERVER['HTTP_X_SIGNATURE'];
       $body_raw = file_get_contents('php://input');
 
-
       $public_key_ayo_path = '../keys/public_key_notify_itg_sand.pem';
       $public_key_ayo = file_get_contents($public_key_ayo_path);
-      $clientKey = $this->M_Base->u_get('ayolinx-key');
+      $clientKey = $this->M_Base->u_get('alleron-key');
 
-      // if ($client_key != $clientKey) {
-      //     throw new Exception('Unauthorized client key!');
-      // }
-      //
-      // if (empty($signature)) {
-      //     throw new Exception('Empty Signature!');
-      // }
-      //
-      // if (!file_exists($public_key_ayo_path)) {
-      //     throw new Exception('Internal Server Error, Public Key File Not Exist');
-      // }
-      // if (empty($public_key_ayo)) {
-      //     throw new Exception('Internal Server Error, Public Key Empty');
-      // }
-      //
-      // $data = $client_key.'|'.$timestamp;
-      // $sign = base64_decode($signature);
-      // $sign_check = openssl_verify($data, $sign, $public_key_ayo, OPENSSL_ALGO_SHA256);
-      //
-      // if (!$sign_check) {
-      //     throw new Exception('Invalid Signature, verify openssl');
-      // }
+      $this->logCallback($body_raw, json_encode(getallheaders()), 'get_token_va.log');
+
+      if ($client_key != $clientKey) {
+          return $this->response->setJSON(['responseCode' => AyolinxEnums::ERR_AYOLINK_PAYMENT_BAD_REQ, 'responseMessage' => 'Unauthorized client key!']);
+      }
+
+      if (empty($signature)) {
+          return $this->response->setJSON(['responseCode' => AyolinxEnums::ERR_AYOLINK_PAYMENT_INVALID_SIGN, 'responseMessage' => 'Empty Signature!']);
+      }
+
+      if (!file_exists($public_key_ayo_path)) {
+          return $this->response->setJSON(['responseCode' => AyolinxEnums::ERR_AYOLINK_PAYMENT_BAD_REQ, 'responseMessage' => 'Internal Server Error, Public Key File Not Exist']);
+      }
+
+      if (empty($public_key_ayo)) {
+          return $this->response->setJSON(['responseCode' => AyolinxEnums::ERR_AYOLINK_PAYMENT_BAD_REQ, 'responseMessage' => 'Internal Server Error, Public Key Empty']);
+      }
+
+      $data = $client_key.'|'.$timestamp;
+      $sign = base64_decode($signature);
+      $sign_check = openssl_verify($data, $sign, $public_key_ayo, OPENSSL_ALGO_SHA256);
+
+      if (!$sign_check) {
+          return $this->response->setJSON(['responseCode' => AyolinxEnums::ERR_AYOLINK_PAYMENT_INVALID_SIGN, 'responseMessage' => ' Invalid Signature']);
+      }
 
       // Generate token (e99a18c428cb38d5f260853678922e03b20e8f5c5b8a3f0a1b2c3d4e5f6a7b8c9)
       $token_key = 'ayo_token_%s_%s';
@@ -381,7 +383,6 @@ class Ayolinx extends BaseController
 
       $json_ret = json_encode($ret, JSON_PRETTY_PRINT);
 
-      $this->logCallback($body_raw, json_encode(getallheaders()), 'get_token_va.log', $json_ret);
 
       header('Content-Type: application/json');
 
@@ -393,10 +394,10 @@ class Ayolinx extends BaseController
       $public_key_ayo = file_get_contents($public_key_ayo_path);
 
       if (!file_exists($public_key_ayo_path)) {
-          throw new Exception('Internal Server Error, Public Key File Not Exist');
+          return $this->response->setJSON(['responseCode' => AyolinxEnums::ERR_AYOLINK_TOKEN_NO_AUTH_ERROR, 'responseMessage' => 'Internal Server Error, Public Key File Not Exist']);
       }
       if (empty($public_key_ayo)) {
-          throw new Exception('Internal Server Error, Public Key Empty');
+          return $this->response->setJSON(['responseCode' => AyolinxEnums::ERR_AYOLINK_TOKEN_NO_AUTH_ERROR, 'responseMessage' => 'Internal Server Error, Public Key Empty']);
       }
 
       $url = "/v1.0/qr/qr-mpm-notify";
@@ -408,7 +409,7 @@ class Ayolinx extends BaseController
       $isValidSignature = openssl_verify($data, $signature, $public_key_ayo, OPENSSL_ALGO_SHA256);
 
       if (!$isValidSignature) {
-          throw new Exception('Signature not valid');
+          return $this->response->setJSON(['responseCode' => AyolinxEnums::ERR_AYOLINK_PAYMENT_INVALID_SIGN, 'responseMessage' => 'Signature not valid']);
       }
   }
 
@@ -417,19 +418,17 @@ class Ayolinx extends BaseController
       $body = json_decode($body_raw);
       $refNo = $this->request->getGet('refNo') ?? null;
       $headers = $this->request->getHeaders();
-      //$headerSign = $headers['X-Signature']->getValue();
+      $headerSign = $headers['X-Signature']->getValue();
 
       $this->logCallback($body_raw, json_encode(getallheaders()), 'callback.log');
-      $callback_type = 'EWALLET';
       $status_callback = $body->transactionStatusDesc ?? null; // check for callback ewallet if null then callback qris
        if ($refNo == null || $status_callback == null) {
           $refNo = $body->originalPartnerReferenceNo;
           $status_callback = $body->latestTransactionStatus === "00" ? 'SUCCESS' : 'FAILED';
-          $callback_type = 'QRIS';
        }
     
       // verify signature matiin dulu
-      // $this->verifySignatureCallback($headerSign, $body_raw);
+      $this->verifySignatureCallback($headerSign, $body_raw);
     
       $payment_amount = 0;
       $payment_type = '';
@@ -446,7 +445,7 @@ class Ayolinx extends BaseController
       }
 
       if(empty($order) || $payment_amount == 0){
-          return $this->response->setJSON(['responseCode' => 200560611, 'responseMessage' => 'Order not found!']);
+          return $this->response->setJSON(['responseCode' => AyolinxEnums::ERR_AYOLINK_PAYMENT_BAD_REQ, 'responseMessage' => 'Order not found!']);
       }
 
       $callback_id = 'CLB'.date('Ymd') . rand(0000,9999);
@@ -465,26 +464,7 @@ class Ayolinx extends BaseController
 
       $this->M_Base->data_insert('callback', $callback_data);
 
-      $check_callback = null;
-      $check_callback_where['status'] = 'SUCCESS';
-      if($callback_type == 'EWALLET'){
-          if (!empty($body->partnerReferenceNo)) {
-              $check_callback_where['partner_reference_no'] = $body->partnerReferenceNo;
-              $check_callback = $this->M_Base->data_where_2('callback', $check_callback_where);
-          }
-       } elseif($callback_type == 'QRIS'){
-            if (!empty($body->originalPartnerReferenceNo)) {
-              $check_callback_where['original_partner_reference_no'] = $body->originalPartnerReferenceNo;
-              $check_callback = $this->M_Base->data_where_2('callback', $check_callback_where);
-          }
-      }
-
-      if (!empty($check_callback)) {
-          return $this->response->setJSON(['responseCode' => 2005606, 'responseMessage' => 'Successfully']);
-      }
-
       $check_order = null;
-
       $check_order_where['status'] = 'Success';
       $check_order_where[strtolower($payment_type).'_id'] = $refNo;
       if ($payment_type == 'Topup') {
@@ -494,7 +474,7 @@ class Ayolinx extends BaseController
       }
 
       if (!empty($check_order)) {
-          return $this->response->setJSON(['responseCode' => 2005606, 'responseMessage' => 'Successfully']);
+          return $this->response->setJSON(['responseCode' => AyolinxEnums::SUCCESS_CALLBACK, 'responseMessage' => 'Successfully1']);
       }
     
       header('Content-Type: application/json');
@@ -527,10 +507,10 @@ class Ayolinx extends BaseController
               ], $order[0]['id']);
           }
 
-          return $this->response->setJSON(['responseCode' =>AyolinxEnums::SUCCESS_CALLBACKVA, 'responseMessage' => 'Successful']);
+          return $this->response->setJSON(['responseCode' =>AyolinxEnums::SUCCESS_CALLBACKVA, 'responseMessage' => 'Successful3']);
       }
 
-      return $this->response->setJSON(['responseCode' => 2005606, 'responseMessage' => 'Successfully']);
+      return $this->response->setJSON(['responseCode' => AyolinxEnums::SUCCESS_CALLBACK, 'responseMessage' => 'Successfully4']);
   }
 
    public function paymentVACallback(){
@@ -544,34 +524,34 @@ class Ayolinx extends BaseController
       // $header_client_key = $headers['X-CLIENT-KEY']->getValue();
       // $header_signature = $headers['X-SIGNATURE']->getValue();
 
-      // $checkCallback = $this->checkCallbackVA($body);
-      // if (!$checkCallback) {
-      //     throw new Exception('Failed check token VA callback!');
-      // }
+      $checkCallback = $this->checkCallbackVA($body);
+      if (!$checkCallback) {
+          return $this->response->setJSON(['responseCode' => AyolinxEnums::ERR_AYOLINK_TOKEN_NO_AUTH_ERROR, 'responseMessage' => 'Failed check token VA callback!']);
+      }
 
       $status_callback = 'SUCCESS';
       $refNo = $body->trxId ?? null;
 
       if (empty($body->additionalInfo->paymentTimeIso8601)) {
           $status_callback = 'Failed';
-          throw new Exception('Invalid Mandatory Field paymentTimeIso8601');
+          return $this->response->setJSON(['responseCode' => AyolinxEnums::ERR_AYOLINK_PAYMENT_BAD_REQ, 'responseMessage' => 'Invalid Mandatory Field paymentTimeIso8601']);
       }
 
       if (empty($body->paidAmount->value)) {
           $status_callback = 'Failed';
-          throw new Exception('Invalid Mandatory Field paidAmount value');
+          return $this->response->setJSON(['responseCode' => AyolinxEnums::ERR_AYOLINK_PAYMENT_BAD_REQ, 'responseMessage' => 'Invalid Mandatory Field paidAmount value']);
       }
 
       if (empty($body->additionalInfo->paymentNtb)) {
           $status_callback = 'Failed';
-          throw new Exception('Invalid Mandatory Field paymentNtb');
+          return $this->response->setJSON(['responseCode' => AyolinxEnums::ERR_AYOLINK_PAYMENT_BAD_REQ, 'responseMessage' => 'Invalid Mandatory Field paymentNtb']);
       }
 
       $payment_amount = 0;
       $payment_type = '';
 
       if (empty($refNo)) {
-          throw new Exception('refNo cannot be null!');
+          return $this->response->setJSON(['responseCode' => AyolinxEnums::ERR_AYOLINK_PAYMENT_BAD_REQ, 'responseMessage' => 'refNo cannot be null!']);
       }
 
       $order = $this->M_Base->data_where('orders', 'order_id', $refNo);
@@ -604,20 +584,8 @@ class Ayolinx extends BaseController
       ];
 
       $this->M_Base->data_insert('callback', $callback_data);
-      $check_callback = null;
-
-      if (!empty($body->partnerReferenceNo)) {
-          $check_callback_where['partner_reference_no'] = $body->trxId;
-          $check_callback_where['status'] = 'SUCCESS';
-          $check_callback = $this->M_Base->data_where_2('callback', $check_callback_where);
-      }
-
-      if (!empty($check_callback)) {
-          return $this->response->setJSON(['responseCode' => 2005606, 'responseMessage' => 'Successfully']);
-      }
 
       $check_order = null;
-
       $check_order_where['status'] = 'Success';
       $check_order_where[strtolower($payment_type).'_id'] = $refNo;
       if ($payment_type == 'Topup') {
@@ -627,7 +595,7 @@ class Ayolinx extends BaseController
       }
 
       if (!empty($check_order)) {
-        return $this->response->setJSON(['responseCode' => 2005606, 'responseMessage' => 'Successfully']);
+        return $this->response->setJSON(['responseCode' => AyolinxEnums::SUCCESS_CALLBACKVA, 'responseMessage' => 'Successfully']);
       }
 
       header('Content-Type: application/json');
@@ -691,16 +659,15 @@ class Ayolinx extends BaseController
       $auth = $_SERVER['HTTP_AUTHORIZATION'];
       $access_token = trim(str_replace('Bearer ','', $auth));
 
-      $client_id = $this->M_Base->u_get('ayolinx-key');
-      $client_secret = $this->M_Base->u_get('ayolinx-secret');
+      $client_id = $this->M_Base->u_get('alleron-key');
+      // $client_secret = $this->M_Base->u_get('ayolinx-secret');
 
       if ($partner_id != $client_id) {
-          throw new Exception('Unauthorized client key!');
+          return $this->response->setJSON(['responseCode' => AyolinxEnums::ERR_AYOLINK_PAYMENT_BAD_REQ, 'responseMessage' => 'Unauthorized client key!']);
       }
 
       if (empty($signature)) {
-          throw new Exception('Empty Signature!');
-
+          return $this->response->setJSON(['responseCode' => AyolinxEnums::ERR_AYOLINK_PAYMENT_BAD_REQ, 'responseMessage' => 'Empty Signature!']);
       }
 
       // mikirin cara nyimpen token hasil generate-an
@@ -711,15 +678,16 @@ class Ayolinx extends BaseController
       //     throw new BusinessException(ErrorCode::ERR_AYOLINK_PAYMENT_NO_AUTH_ERROR, 'Unauthorized Client');
       // }
 
-      $method = 'POST';
-      $url = '/v1.0/transfer-va/payment';
-      $hashedBody = hash('sha256', json_encode($param));
-      $str = "{$method}:{$url}:{$access_token}:{$hashedBody}:{$timestamp}";
-      $sign_local = base64_encode(hash_hmac('sha512', $str, $client_secret, true));
-
-      if ($signature != $sign_local) {
-          throw new Exception('Invalid Signature');
-      }
+      // $method = 'POST';
+      // $url = '/v1.0/transfer-va/payment';
+      // $hashedBody = hash('sha256', json_encode($param));
+      // $str = "{$method}:{$url}:{$access_token}:{$hashedBody}:{$timestamp}";
+      // $sign_local = base64_encode(hash_hmac('sha512', $str, $client_secret, true));
+      //
+      // if ($signature != $sign_local) {
+      //     throw new Exception('Invalid Signature');
+      //     return $this->response->setJSON(['responseCode' => AyolinxEnums::ERR_AYOLINK_PAYMENT_BAD_REQ, 'responseMessage' => 'Invalid Signature']);
+      // }
 
       return true;
   }
