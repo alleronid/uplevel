@@ -17,7 +17,8 @@ class User extends BaseController {
     public function index() {
 
         if ($this->users === false) {
-            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound();
+            return redirect()->to(base_url() . '/login');
+            // throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound();
         } else {
 
             if ($this->request->getPost('btn_password')) {
@@ -113,7 +114,8 @@ class User extends BaseController {
     public function riwayat() {
 
         if ($this->users === false) {
-            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound();
+            return redirect()->to(base_url() . '/login');
+            // throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound();
         } else {
 
             $data = array_merge($this->base_data, [
@@ -128,7 +130,8 @@ class User extends BaseController {
     public function topup($topup_id = null) {
 
         if ($this->users === false) {
-            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound();
+            return redirect()->to(base_url() . '/login');
+            // throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound();
         } else {
             if ($topup_id === null) {
                 if ($this->request->getPost('tombol')) {
@@ -193,9 +196,11 @@ class User extends BaseController {
                                     } elseif (strcasecmp($method[0]['method'], 'DANA') == 0) {
                                         $price = ceil($amount * $rate);
                                         $biaya_admin = max(0, $price - $amount);
+                                        $currentTimestamp = time();
+                                        $twoMonthsLater = strtotime("+2 months", $currentTimestamp);
                                         $body = [
                                             "partnerReferenceNo" => $topup_id,
-                                            "validUpTo" => "1746249942",
+                                            "validUpTo" =>" . $twoMonthsLater . ",
                                             "amount" => [
                                                 "currency" => "IDR",
                                                 "value" => $price
@@ -221,7 +226,7 @@ class User extends BaseController {
                                             if ($result['responseCode'] == AyolinxEnums::SUCCESS_DANA) {
                                                 $payment_code = $result['webRedirectUrl'];
                                                 } else {
-                                                    $this->session->setFlashdata('error', 'Result : ' . $result['message']);
+                                                    $this->session->setFlashdata('error', 'Result : ' . $result['responseMessage']);
                                                     return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
                                                 }
                                             } else {
