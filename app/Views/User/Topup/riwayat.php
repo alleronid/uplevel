@@ -72,13 +72,13 @@
 												<td><?= $loop['date_create']; ?></td>
 												<td>
 												   <?php if ( in_array($loop['status'], array('Success','Finished')) ) : ?>
-												        <b class="cursor-pointer text-success" onclick="detail('<?= $loop['topup_id']; ?>');">No Trx : <?= $loop['topup_id']; ?></b><br>
+												        <a class="cursor-pointer text-success" href="<?= base_url(); ?>/user/topup/<?= $loop['topup_id']; ?>">No Trx : <?= $loop['topup_id']; ?></a><br>
 												    <?php elseif ( in_array($loop['status'], array('Pending')) ) : ?>
-												        <b class="cursor-pointer text-warning" onclick="detail('<?= $loop['topup_id']; ?>');">No Trx : <?= $loop['topup_id']; ?></b><br>
+												        <a class="cursor-pointer text-warning" href="<?= base_url(); ?>/user/topup/<?= $loop['topup_id']; ?>">No Trx : <?= $loop['topup_id']; ?></a><br>
 												    <?php elseif ( in_array($loop['status'], array('Processing')) ) : ?>
-												        <b class="cursor-pointer text-warning" onclick="detail('<?= $loop['topup_id']; ?>');">No Trx : <?= $loop['topup_id']; ?></b><br>
+												        <a class="cursor-pointer text-warning" href="<?= base_url(); ?>/user/topup/<?= $loop['topup_id']; ?>">No Trx : <?= $loop['topup_id']; ?></a><br>
 												    <?php elseif ( in_array($loop['status'], array('Canceled','Expired')) ) : ?>
-												        <b class="cursor-pointer text-danger" onclick="detail('<?= $loop['topup_id']; ?>');">No Trx : <?= $loop['topup_id']; ?></b><br>
+												        <a class="cursor-pointer text-danger" href="<?= base_url(); ?>/user/topup/<?= $loop['topup_id']; ?>">No Trx : <?= $loop['topup_id']; ?></a><br>
 												    <?php endif ?>
 												
 												</td>
