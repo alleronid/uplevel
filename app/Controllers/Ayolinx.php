@@ -417,19 +417,19 @@ class Ayolinx extends BaseController
       $body = json_decode($body_raw);
       $refNo = $this->request->getGet('refNo') ?? null;
       $headers = $this->request->getHeaders();
-      $headerSign = $headers['X-Signature']->getValue();
+      //$headerSign = $headers['X-Signature']->getValue();
 
       $this->logCallback($body_raw, json_encode(getallheaders()), 'callback.log');
-         $status_callback = $body->transactionStatusDesc ?? null;
+      $callback_type = 'EWALLET';
+      $status_callback = $body->transactionStatusDesc ?? null; // check for callback ewallet if null then callback qris
        if ($refNo == null || $status_callback == null) {
           $refNo = $body->originalPartnerReferenceNo;
-          $statusCallback = $body->latestTransactionStatus === "00" ? 'SUCCESS' : 'FAILED';
+          $status_callback = $body->latestTransactionStatus === "00" ? 'SUCCESS' : 'FAILED';
+          $callback_type = 'QRIS';
        }
-    
     
       // verify signature matiin dulu
       // $this->verifySignatureCallback($headerSign, $body_raw);
-
     
       $payment_amount = 0;
       $payment_type = '';
@@ -439,10 +439,10 @@ class Ayolinx extends BaseController
           // if not found in orders table then is topup
           $order = $this->M_Base->data_where('topup', 'topup_id', $refNo); 
           $payment_type = 'Topup';
-          $payment_amount = $order->amount;
+          $payment_amount = $order[0]['amount'] ?? 0;
       } else{
           $payment_type = 'Order';
-          $payment_amount = $order->price;
+          $payment_amount = $order[0]['amount'] ?? 0;
       }
 
       if(empty($order) || $payment_amount == 0){
@@ -450,11 +450,17 @@ class Ayolinx extends BaseController
       }
 
       $check_callback = null;
-
-      if (!empty($body->originalPartnerReferenceNo)) {
-          $check_callback_where['partner_reference_no'] = $body->originalPartnerReferenceNo;
-          $check_callback_where['status'] = 'SUCCESS';
-          $check_callback = $this->M_Base->data_where_2('callback', $check_callback_where);
+      $check_callback_where['status'] = 'SUCCESS';
+      if($callback_type == 'EWALLET'){
+          if (!empty($body->partnerReferenceNo)) {
+              $check_callback_where['partner_reference_no'] = $body->partnerReferenceNo;
+              $check_callback = $this->M_Base->data_where_2('callback', $check_callback_where);
+          }
+       } elseif($callback_type == 'QRIS'){
+            if (!empty($body->originalPartnerReferenceNo)) {
+              $check_callback_where['original_partner_reference_no'] = $body->originalPartnerReferenceNo;
+              $check_callback = $this->M_Base->data_where_2('callback', $check_callback_where);
+          }
       }
 
       if (!empty($check_callback)) {
@@ -472,7 +478,7 @@ class Ayolinx extends BaseController
       }
 
       if (!empty($check_order)) {
-          throw new Exception('Payment order already done success!');
+          return $this->response->setJSON(['responseCode' => 2005606, 'responseMessage' => 'Successfully']);
       }
     
       $callback_id = 'CLB'.date('Ymd') . rand(0000,9999);
@@ -489,7 +495,7 @@ class Ayolinx extends BaseController
           'request_body'                  => $body_raw,
       ];
 
-      $this->M_Base->data_insert('callback', $data);
+      $this->M_Base->data_insert('callback', $callback_data);
 
       header('Content-Type: application/json');
       if ($status_callback == 'SUCCESS') {
@@ -527,7 +533,7 @@ class Ayolinx extends BaseController
       return $this->response->setJSON(['responseCode' => 2005606, 'responseMessage' => 'Successfully']);
   }
 
-  public function paymentVACallback(){
+   public function paymentVACallback(){
       $body_raw = file_get_contents('php://input');
       $body = json_decode($body_raw);
       $headers = $this->request->getHeaders();
@@ -591,7 +597,7 @@ class Ayolinx extends BaseController
       }
 
       if (!empty($check_callback)) {
-          throw new Exception('Payment already done success!');
+          return $this->response->setJSON(['responseCode' => 2005606, 'responseMessage' => 'Successfully']);
       }
 
       $check_order = null;
@@ -605,7 +611,7 @@ class Ayolinx extends BaseController
       }
 
       if (!empty($check_order)) {
-          throw new Exception('Payment order already done success!');
+        return $this->response->setJSON(['responseCode' => 2005606, 'responseMessage' => 'Successfully']);
       }
 
       $callback_id = 'CLB'.date('Ymd') . rand(0000,9999);
@@ -671,7 +677,7 @@ class Ayolinx extends BaseController
 
           header('Content-Type: application/json');
           return $this->response->setJSON($resp);
-  }
+      }
   }
 
   private function checkCallbackVA($param)
@@ -694,6 +700,7 @@ class Ayolinx extends BaseController
 
       if (empty($signature)) {
           throw new Exception('Empty Signature!');
+
       }
 
       // mikirin cara nyimpen token hasil generate-an
@@ -725,13 +732,6 @@ class Ayolinx extends BaseController
       }else{
           $message = "[" . date('Y-m-d H:i:s') . "]: BODY: ".$body ." HEADER: ". $header. PHP_EOL;
       }
-
-      file_put_contents($logFile, $message, FILE_APPEND);
-  }
-
-  private function logCallback($body, $header){
-      $logFile = 'logs/callback.log';
-      $message = "[" . date('Y-m-d H:i:s') . "]: BODY: ".$body ." HEADER: ". $header. PHP_EOL;
 
       file_put_contents($logFile, $message, FILE_APPEND);
   }
