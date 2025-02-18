@@ -38,4 +38,8 @@ class AyolinxEnums
   const SUCCESS_QRIS = '2004700';
   const SUCCESS_VA_BNI = '2002700';
   const UNAUTHORIZED = '581000001';
+  const SUCCESS_GET_TOKENVA = '2007300';
+  const SUCCESS_CALLBACKVA = '2002500';
+  const SUCCESS_CALLBACK = '2005600';
+  
 }
