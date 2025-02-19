@@ -102,7 +102,7 @@ class AyolinxService
 
     $response = curl_exec($curl);
 
-    $this->logCallback(json_encode($post), json_encode(array( 
+    insert_log(json_encode($post), json_encode(array( 
         'X-TIMESTAMP: ' . $timestamp,
         'X-SIGNATURE:' . $signature,
         'X-PARTNER-ID:' . $this->M_Base->u_get('ayolinx-key'),
@@ -162,18 +162,6 @@ class AyolinxService
     $response =$this->base_interface($signature, $timestamp, $token, $urlSignature, $body);
 
     return $response;
-  }
-
-  private function logCallback($body, $header, $log_name = null, $ret = null){
-      $logname = $log_name ?? 'payment.log';
-      $logFile = "logs/$logname";
-      if ($ret) {
-          $message = "[" . date('Y-m-d H:i:s') . "]: BODY: ".$body ." HEADER: ". $header. " RESPONSE: ". $ret.PHP_EOL;
-      }else{
-          $message = "[" . date('Y-m-d H:i:s') . "]: BODY: ".$body ." HEADER: ". $header. PHP_EOL;
-      }
-
-      file_put_contents($logFile, $message, FILE_APPEND);
   }
 
   public function randomNumber(){

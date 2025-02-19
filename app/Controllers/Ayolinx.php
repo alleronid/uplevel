@@ -341,7 +341,7 @@ class Ayolinx extends BaseController
       $public_key_ayo = file_get_contents($public_key_ayo_path);
       $clientKey = $this->M_Base->u_get('alleron-key');
 
-      $this->logCallback($body_raw, json_encode(getallheaders()), 'get_token_va.log');
+      insert_log($body_raw, json_encode(getallheaders()), 'get_token_va.log');
 
       if ($client_key != $clientKey) {
           return $this->response->setJSON(['responseCode' => AyolinxEnums::ERR_AYOLINK_PAYMENT_BAD_REQ, 'responseMessage' => 'Unauthorized client key!']);
@@ -420,7 +420,8 @@ class Ayolinx extends BaseController
       $headers = $this->request->getHeaders();
       $headerSign = $headers['X-Signature']->getValue();
 
-      $this->logCallback($body_raw, json_encode(getallheaders()), 'callback.log');
+      insert_log($body_raw, json_encode(getallheaders()), 'callback.log');
+
       $status_callback = $body->transactionStatusDesc ?? null; // check for callback ewallet if null then callback qris
        if ($refNo == null || $status_callback == null) {
           $refNo = $body->originalPartnerReferenceNo;
@@ -502,7 +503,7 @@ class Ayolinx extends BaseController
                   ], $user[0]['id']);
               }
 
-              $this->updateOrder($status_callback, $order[0]['id']);
+              $this->updateOrder($status_callback, $order[0]['order_id']);
           }
 
           return $this->response->setJSON(['responseCode' =>AyolinxEnums::SUCCESS_CALLBACKVA, 'responseMessage' => 'Successful3']);
@@ -516,7 +517,7 @@ class Ayolinx extends BaseController
       $body = json_decode($body_raw);
       $headers = $this->request->getHeaders();
 
-      $this->logCallback($body_raw, json_encode(getallheaders()), 'callbackVA.log');
+      insert_log($body_raw, json_encode(getallheaders()), 'callbackVA.log');
 
       // $header_timestamp = $headers['X-TIMESTAMP']->getValue();
       // $header_client_key = $headers['X-CLIENT-KEY']->getValue();
@@ -621,7 +622,7 @@ class Ayolinx extends BaseController
                   ], $user[0]['id']);
               }
 
-              $this->updateOrder($status_callback, $order[0]['id']);
+              $this->updateOrder($status_callback, $order[0]['order_id']);
           }
 
           $resp = [
@@ -686,18 +687,6 @@ class Ayolinx extends BaseController
       // }
 
       return true;
-  }
-
-  private function logCallback($body, $header, $log_name = null, $ret = null){
-      $logname = $log_name ?? 'callback.log';
-      $logFile = "logs/$logname";
-      if ($ret) {
-          $message = "[" . date('Y-m-d H:i:s') . "]: BODY: ".$body ." HEADER: ". $header. " RESPONSE: ". $ret.PHP_EOL;
-      }else{
-          $message = "[" . date('Y-m-d H:i:s') . "]: BODY: ".$body ." HEADER: ". $header. PHP_EOL;
-      }
-
-      file_put_contents($logFile, $message, FILE_APPEND);
   }
 
   private function updateOrder($status_callback, $order_id){

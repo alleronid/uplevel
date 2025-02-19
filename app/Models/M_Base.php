@@ -174,7 +174,7 @@ class M_Base extends Model
 
 	public function u_get($key)
 	{
-		return $this->db->table('utility')->where('u_key', $key)->get()->getResultArray()[0]['u_value'];
+		return $this->db->table('utility')->where('u_key', $key)->get()->getResultArray()[0]['u_value'] ??'';
 	}
 	public function u_update($key, $value)
 	{
@@ -599,6 +599,11 @@ Terima kasih.
         ]);
         
         $response = curl_exec($curl);
+
+        $this->logCallback(json_encode($body), json_encode([
+            "Accept: */*",
+            "Content-Type: application/json",
+        ]), 'send-wa.log', $response);
         $err = curl_error($curl);
         
         curl_close($curl);
@@ -651,6 +656,11 @@ Terima kasih.
         ]);
         
         $response = curl_exec($curl);
+        $this->logCallback(json_encode($body), json_encode([
+            "Accept: */*",
+            "Content-Type: application/json",
+        ]), 'send-wa.log', $response);
+
         $err = curl_error($curl);
         
         curl_close($curl);
@@ -685,7 +695,11 @@ Terima kasih.
 		curl_setopt($ch, CURLOPT_POST, 1);
 		curl_setopt($ch, CURLOPT_POSTFIELDS, $post_data);
 		$result = curl_exec($ch);
+
+        $this->logCallback($post_data, json_encode(['Content-Type: application/json']), 'hit-df.log', $result);
+
 		$result = json_decode($result, true);
+
 		return $result;
 	}
 
@@ -716,5 +730,16 @@ Terima kasih.
 		return $result;
 	}
 
+    private function logCallback($body, $header, $log_name = null, $ret = null){
+        $logname = $log_name ?? 'payment.log';
+        $logFile = "logs/$logname";
+        if ($ret) {
+            $message = "[" . date('Y-m-d H:i:s') . "]: BODY: ".$body ." HEADER: ". $header. " RESPONSE: ". $ret.PHP_EOL;
+        }else{
+            $message = "[" . date('Y-m-d H:i:s') . "]: BODY: ".$body ." HEADER: ". $header. PHP_EOL;
+        }
+
+        file_put_contents($logFile, $message, FILE_APPEND);
+    }
 
 }

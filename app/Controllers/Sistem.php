@@ -276,7 +276,11 @@ class Sistem extends BaseController
 					curl_setopt($ch, CURLOPT_POST, 1);
 					curl_setopt($ch, CURLOPT_POSTFIELDS, $post_data);
 					$result = curl_exec($ch);
+
+                    insert_log($post_data, json_encode(['Content-Type: application/json']), 'callback-df.log', $result);
+
 					$result = json_decode($result, true);
+
 
 					if (isset($result['data'])) {
 

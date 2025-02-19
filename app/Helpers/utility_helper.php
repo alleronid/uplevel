@@ -32,3 +32,15 @@ function reverse_date($date_1, $date_2) {
 
 	return $date_1 . ' - ' . $date_2;
 }
+
+function insert_log($body, $header, $log_name = null, $ret = null){
+    $logname = $log_name ?? 'callback.log';
+    $logFile = "logs/$logname";
+    if ($ret) {
+        $message = "[" . date('Y-m-d H:i:s') . "]: BODY: ".$body ." HEADER: ". $header. " RESPONSE: ". $ret.PHP_EOL;
+    }else{
+        $message = "[" . date('Y-m-d H:i:s') . "]: BODY: ".$body ." HEADER: ". $header. PHP_EOL;
+    }
+
+    file_put_contents($logFile, $message, FILE_APPEND);
+}
