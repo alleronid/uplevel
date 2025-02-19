@@ -502,9 +502,7 @@ class Ayolinx extends BaseController
                   ], $user[0]['id']);
               }
 
-              $this->M_Base->data_update('orders', [
-                  'status' => 'Success'
-              ], $order[0]['id']);
+              $this->updateOrder($status_callback, $order[0]['id']);
           }
 
           return $this->response->setJSON(['responseCode' =>AyolinxEnums::SUCCESS_CALLBACKVA, 'responseMessage' => 'Successful3']);
@@ -623,9 +621,7 @@ class Ayolinx extends BaseController
                   ], $user[0]['id']);
               }
 
-              $this->M_Base->data_update('orders', [
-                  'status' => 'Success'
-              ], $order[0]['id']);
+              $this->updateOrder($status_callback, $order[0]['id']);
           }
 
           $resp = [
@@ -702,5 +698,103 @@ class Ayolinx extends BaseController
       }
 
       file_put_contents($logFile, $message, FILE_APPEND);
+  }
+
+  private function updateOrder($status_callback, $order_id){
+      if ($status_callback === 'SUCCESS') {
+          $orders = $this->M_Base->data_where_array('orders', [
+              'order_id' => $order_id,
+              'status' => 'Pending'
+          ]);
+
+          if (count($orders) === 1) {
+
+              $status = 'Processing';
+
+              $product = $this->M_Base->data_where('product', 'id', $orders[0]['product_id']);
+              $trx = $order_id;
+
+              if (count($product) === 1) {
+
+                  switch ($orders[0]['provider']) {
+                  case 'DF':
+                  case 'LG':
+                  case 'BJ':
+                  case 'TV':
+                      $this->processOrder($orders[0]['provider'], $product[0]['sku'], $orders[0]['user_id'], $orders[0]['zone_id'], $orders[0]['order_id'], '', '', $status, $ket, $trx);
+                      break;
+                  case 'VR':
+                  case 'PVR':
+                  case 'BM':
+                  case 'PBM':
+                  case 'AG':
+                  case 'Manual':
+                      $this->processOrder($orders[0]['provider'], $product[0]['sku'], $orders[0]['user_id'], $orders[0]['zone_id'], $orders[0]['order_id'], $orders[0]['wa'], $orders[0]['method'], $status, $ket, $trx);
+                      break;
+                  default:
+                      $ket = 'Provider tidak ditemukan';
+                  }
+
+              } else {
+                  $ket = 'Produk tidak ditemukan';
+              }
+
+              $this->M_Base->data_update('orders', [
+                  'status' => $status,
+                  'ket' => $ket,
+                  'trx_id' => $trx,
+              ], $orders[0]['id']);
+
+          } 
+      }
+  }
+
+  private function processOrder($provider, $product, $userid, $zoneid, $orderid, $wacust, $method, &$status, &$ket, &$trx)
+  {
+
+      if (!empty($zoneid) and $zoneid != 1) {
+          $customer_no = $userid . $zoneid;
+      } else {
+          $customer_no = $userid;
+      }
+
+      if ($provider == 'DF') {
+
+          $result = $this->M_Base->df_order($product, $customer_no, $orderid);
+
+          if (isset($result['data'])) {
+              if ($result['data']['status'] == 'Gagal') {
+                  $ket = $result['data']['message'];
+              } else {
+                  $ket = $result['data']['sn'] !== '' ? $result['data']['sn'] : $result['data']['message'];
+              }
+          } else {
+              $ket = 'Failed Order';
+          }
+
+      } else if ($provider == 'AG') {
+
+          $result = $this->M_Base->ag_v1_order($product, $customer_no, $orderid);
+
+          if ($result['status'] == 0) {
+              $ket = $result['error_msg'];
+          } else {
+
+              if ($result['data']['status'] == 'Sukses') {
+                  $status = 'Success';
+                  $this->M_Base->wapisender_sukses($wacust, $product, $orderid, $method);
+              }
+
+              $ket = $result['data']['sn'];
+          }
+
+      } else if ($provider == 'Manual') {
+          $status = 'Processing';
+          $ket = 'Pesanan siap diproses';
+
+      } else {
+          $ket = 'Provider tidak ditemukan';
+      }
+
   }
 }
