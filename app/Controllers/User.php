@@ -200,7 +200,7 @@ class User extends BaseController {
                                         $twoMonthsLater = strtotime("+2 months", $currentTimestamp);
                                         $body = [
                                             "partnerReferenceNo" => $topup_id,
-                                            "validUpTo" =>" . $twoMonthsLater . ",
+                                            "validUpTo" =>(string)$twoMonthsLater,
                                             "amount" => [
                                                 "currency" => "IDR",
                                                 "value" => $price

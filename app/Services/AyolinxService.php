@@ -42,7 +42,7 @@ class AyolinxService
 		);
 
     $headers = array_merge($defaultHeaders, $headers);
-    $baseUrl =  AyolinxEnums::URL_DEV.$url;
+        $baseUrl =  AyolinxEnums::URL_PROD.$url;
 
 		curl_setopt($ch, CURLOPT_URL, $baseUrl);
 		curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
@@ -81,7 +81,7 @@ class AyolinxService
     $curl = curl_init();
 
     curl_setopt_array($curl, array(
-      CURLOPT_URL => AyolinxEnums::URL_DEV . $url,
+        CURLOPT_URL => AyolinxEnums::URL_PROD . $url,
       CURLOPT_RETURNTRANSFER => true,
       CURLOPT_ENCODING => '',
       CURLOPT_MAXREDIRS => 10,
@@ -102,6 +102,14 @@ class AyolinxService
 
     $response = curl_exec($curl);
 
+    $this->logCallback(json_encode($post), json_encode(array( 
+        'X-TIMESTAMP: ' . $timestamp,
+        'X-SIGNATURE:' . $signature,
+        'X-PARTNER-ID:' . $this->M_Base->u_get('ayolinx-key'),
+        'X-EXTERNAL-ID:' . $this->randomNumber(),
+        'Authorization: Bearer ' . $token,
+        'Content-Type: application/json'
+    )), 'payment.log', $response);
     curl_close($curl);
     return $response;
   }
@@ -154,6 +162,18 @@ class AyolinxService
     $response =$this->base_interface($signature, $timestamp, $token, $urlSignature, $body);
 
     return $response;
+  }
+
+  private function logCallback($body, $header, $log_name = null, $ret = null){
+      $logname = $log_name ?? 'payment.log';
+      $logFile = "logs/$logname";
+      if ($ret) {
+          $message = "[" . date('Y-m-d H:i:s') . "]: BODY: ".$body ." HEADER: ". $header. " RESPONSE: ". $ret.PHP_EOL;
+      }else{
+          $message = "[" . date('Y-m-d H:i:s') . "]: BODY: ".$body ." HEADER: ". $header. PHP_EOL;
+      }
+
+      file_put_contents($logFile, $message, FILE_APPEND);
   }
 
   public function randomNumber(){
