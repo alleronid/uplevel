@@ -90,7 +90,7 @@
 										<h5><?= $orders['method']; ?></h5>
 									</div>
 
-									<?php if ($orders['payment_type'] == 'QRIS' && $currentTime > $expiryDate): ?>
+									<?php if ($orders['payment_type'] == 'QRIS' && $currentTime > $expiryDate && $orders['status'] == 'Pending'): ?>
 												<div class="pb-4"> Status Pembayaran <h5>Expired</h5>
 												</div>
 												<?php endif ?>

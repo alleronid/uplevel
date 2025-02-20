@@ -87,7 +87,7 @@
 														$currentTime = date('Y-m-d H:i:s');
 													?>
 												
-												<?php if ($topup['payment_type'] == 'QRIS' && $currentTime > $expiryDate): ?>
+												<?php if ($topup['payment_type'] == 'QRIS' && $currentTime > $expiryDate && $topup['status'] == 'Pending'): ?>
 												<div class="pb-4"> Status Pembayaran <h5>Expired</h5>
 												</div>
 												<?php endif ?>
