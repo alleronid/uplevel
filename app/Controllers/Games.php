@@ -948,7 +948,7 @@ class Games extends BaseController
                                             $product_price = $product[0]['price'];
 
                                             if ($this->users == false) {
-                                                $username = '';
+                                                $username = 'alleron-id';
                                                 $username_tripay = 'Default';
                                             } else {
                                                 $username = $this->users['username'];
@@ -1096,10 +1096,10 @@ class Games extends BaseController
                                             $fee = ceil($fee);
                                             $price = ceil($price);
                                             if ($method[0]['provider'] == 'Ayolinx') {
-                                                //rate mdr
-                                                $rate = number_format(1 + ($method[0]['mdr_rate'] / 100), 3, '.', '');
-                                                
+                                                //rate mdr               
+                                                $rate = number_format(1 + ($method[0]['mdr_rate'] / 100), 3, '.', '');              
                                                 if (strcasecmp($method[0]['method'], 'QRIS') == 0) {
+                                                    $rate = number_format(1 + ($method[0]['mdr_rate'] / 100), 3, '.', '');
                                                     $price = round(($product_price * $rate));
                                                     $body = [
                                                         "partnerReferenceNo" => $order_id,
@@ -1119,7 +1119,7 @@ class Games extends BaseController
                                                             $redirect = true;
                                                             $payment_code = $result['qrContent'];
                                                         } else {
-                                                            $this->session->setFlashdata('error', 'Result : ' . $result['message']);
+                                                            $this->session->setFlashdata('error', 'Result : ' . $result['responseMessage']);
                                                             return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
                                                         }
                                                     } else {
@@ -1132,7 +1132,7 @@ class Games extends BaseController
                                                     $twoMonthsLater = strtotime("+2 months", $currentTimestamp);
                                                     $body = [
                                                             "partnerReferenceNo" => $order_id,
-                                                            "validUpTo" => ". $twoMonthsLater.",
+                                                            "validUpTo" =>(string)$twoMonthsLater,
                                                             "amount" => [
                                                                 "currency" => "IDR",
                                                                 "value" => $price
@@ -1140,7 +1140,7 @@ class Games extends BaseController
                                                             "urlParams" => [
                                                                 [
                                                                     "type" => "PAY_RETURN",
-                                                                    "url" => base_url() . '/user/' . $order_id
+                                                                    "url" => base_url() . '/payment/' . $order_id
                                                                 ],
                                                                 [
                                                                     "type" => "NOTIFICATION",
@@ -1159,7 +1159,7 @@ class Games extends BaseController
                                                             $redirect = true;
                                                             $payment_code = $result['webRedirectUrl'];
                                                             } else {
-                                                                $this->session->setFlashdata('error', 'Result : ' . $result['message']);
+                                                                $this->session->setFlashdata('error', 'Result : ' . $result['responseMessage']);
                                                                 return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
                                                             }
                                                         } else {
@@ -1167,12 +1167,13 @@ class Games extends BaseController
                                                             return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
                                                         }
                                                 } elseif (strcasecmp($method[0]['method'], 'BNI VIRTUAL ACCOUNT') == 0){
+                                                    $rate = number_format(($method[0]['mdr_rate'] / 100), 3, '.', '');
                                                     $price = ceil($product_price + ($product_price * $rate) + $method[0]['amount_fee']);
                                                     $number = $this->ayolinxService->customerNo();
                                                     $body = [
                                                             "partnerServiceId" => AyolinxEnums::BNI_SB,
                                                             "customerNo" => AyolinxEnums::BNI_SB.$number,
-                                                            "virtualAccountNo" => AyolinxEnums::BNI_SB."0169",
+                                                            // "virtualAccountNo" => AyolinxEnums::BNI_SB."0169",
                                                             "virtualAccountName" =>  $username,
                                                             "trxId" => $order_id,
                                                             "virtualAccountTrxType" => "C",
@@ -1191,7 +1192,7 @@ class Games extends BaseController
                                                         if ($result['responseCode'] == AyolinxEnums::SUCCESS_VA_BNI) {
                                                             $payment_code = $result['virtualAccountData']['virtualAccountNo'];
                                                             } else {
-                                                                $this->session->setFlashdata('error', 'Result : ' . $result['message']);
+                                                                $this->session->setFlashdata('error', 'Result : ' . $result['responseMessage']);
                                                                 return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
                                                             }
                                                         } else {
@@ -1199,12 +1200,12 @@ class Games extends BaseController
                                                             return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
                                                         }
                                                 } elseif (strcasecmp($method[0]['method'], 'CIMB VIRTUAL ACCOUNT') == 0){
-                                                    $price = ceil($product_price + ($product_price * $rate) + $method[0]['amount_fee']);
+                                                    $rate = number_format(($method[0]['mdr_rate'] / 100), 3, '.', '');
                                                     $number = $this->ayolinxService->customerNo();
                                                     $body = [
                                                             "partnerServiceId" => AyolinxEnums::CIMB_SB,
                                                             "customerNo" => AyolinxEnums::CIMB_SB.$number,
-                                                            "virtualAccountNo" => AyolinxEnums::CIMB_SB."0169",
+                                                            // "virtualAccountNo" => AyolinxEnums::CIMB_SB."0169",
                                                             "virtualAccountName" =>  $username,
                                                             "trxId" => $order_id,
                                                             "virtualAccountTrxType" => "C",
@@ -1224,7 +1225,7 @@ class Games extends BaseController
                                                         if ($result['responseCode'] == AyolinxEnums::SUCCESS_VA_BNI) {
                                                             $payment_code = $result['virtualAccountData']['virtualAccountNo'];
                                                             } else {
-                                                                $this->session->setFlashdata('error', 'Result : ' . $result['message']);
+                                                                $this->session->setFlashdata('error', 'Result : ' . $result['responseMessage']);
                                                                 return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
                                                             }
                                                         } else {
@@ -1232,12 +1233,13 @@ class Games extends BaseController
                                                             return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
                                                         }
                                                 }elseif (strcasecmp($method[0]['method'], 'MANDIRI VIRTUAL ACCOUNT') == 0){
+                                                    $rate = number_format(($method[0]['mdr_rate'] / 100), 3, '.', '');
                                                     $price = ceil($product_price + ($product_price * $rate) + $method[0]['amount_fee']);
                                                     $number = $this->ayolinxService->customerNo();
                                                     $body = [
                                                             "partnerServiceId" => AyolinxEnums::MANDIRI_SB,
                                                             "customerNo" => AyolinxEnums::MANDIRI_SB.$number,
-                                                            "virtualAccountNo" => AyolinxEnums::MANDIRI_SB."666",
+                                                            // "virtualAccountNo" => AyolinxEnums::MANDIRI_SB."666",
                                                             "virtualAccountName" =>  $username,
                                                             "trxId" => $order_id,
                                                             "virtualAccountTrxType" => "C",
@@ -1257,7 +1259,7 @@ class Games extends BaseController
                                                         if ($result['responseCode'] == AyolinxEnums::SUCCESS_VA_BNI) {
                                                             $payment_code = $result['virtualAccountData']['virtualAccountNo'];
                                                             } else {
-                                                                $this->session->setFlashdata('error', 'Result : ' . $result['message']);
+                                                                $this->session->setFlashdata('error', 'Result : ' . $result['responseMessage']);
                                                                 return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
                                                             }
                                                         } else {
