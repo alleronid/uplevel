@@ -379,13 +379,17 @@ button.accordion-button {
                         </div>
                         <div class="card-body">
                             <div class="form-group pt-3">
-
                                 <input type="text" name="wa" id="wa" placeholder="Masukan No. Whatsapp" class="form-control" value="" placeholder="+6287882313138" required>
                                 <small class="mt-2 d-block mb-3">
                                     Dengan membeli otomatis saya menyutujui <a href="<?= base_url(); ?>/syarat-ketentuan/" target="_blank" class="text-warning">Ketentuan Layanan</a>.
                                 </small>
-                                <button type="button" class="btn btn-primary text-white" onclick="process_order();">Beli
-                                    Sekarang</button>
+                            </div>
+                            <div class="form-group">
+                                <div class="g-recaptcha" id="g-recaptcha-response" data-sitekey="<?= getenv('GOOGLE_RECAPTCHAV3_SITEKEY') ?>"></div>
+                            </div>
+                            <div class="form-group">
+                            <button type="button" class="btn btn-primary text-white" onclick="process_order();">Beli
+                            Sekarang</button>
                             </div>
                         </div>
                     </div>
@@ -415,15 +419,31 @@ button.accordion-button {
 <?php $this->endSection(); ?>
 
 <?php $this->section('js'); ?>
-
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
 <script>
+function onRecaptchaComplete() {
+    document.querySelector('button[onclick="process_order();"]').disabled = false;
+}
+
+function initRecaptchaValidation() {
+    const buyButton = document.querySelector('button[onclick="process_order();"]');
+    buyButton.disabled = true;
+
+    grecaptcha.ready(function() {
+        grecaptcha.render('g-recaptcha-response', {
+            'sitekey': document.querySelector('.g-recaptcha').dataset.sitekey,
+            'callback': onRecaptchaComplete
+        });
+    });
+}
+
+document.addEventListener('DOMContentLoaded', initRecaptchaValidation);
+
 $('#wa').on('input', function() {
     if (this.value.startsWith('08')) {
         this.value = "628";
     }
     this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*?)\..*/g, '$1');
-
-    console.log(this.value);
 });
 
 $('.currency-idr').each(function() {
@@ -622,7 +642,6 @@ function update_total() {
 }
 
 function process_order() {
-
     <?php if ($games['target'] == 'joki'): ?>
     var user_id = $('.name-joki').map(function() {
         return this.value;

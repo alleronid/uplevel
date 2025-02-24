@@ -1268,7 +1268,6 @@ class Games extends BaseController
                                                         }
                                                 }
                                             } else if ($method[0]['provider'] == 'Balance') {
-
                                                 if ($this->users == false) {
                                                     $this->session->setFlashdata('error', 'Silahkan login dahulu');
                                                     return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
