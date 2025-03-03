@@ -200,7 +200,7 @@ class User extends BaseController {
                                         $twoMonthsLater = strtotime("+2 months", $currentTimestamp);
                                         $body = [
                                             "partnerReferenceNo" => $topup_id,
-                                            "validUpTo" =>(string)$twoMonthsLater,
+                                            "validUpTo" => (string) $twoMonthsLater,
                                             "amount" => [
                                                 "currency" => "IDR",
                                                 "value" => $price
@@ -357,6 +357,7 @@ class User extends BaseController {
                                     'method_code' =>  $method[0]['code'],
                                     'payment_gateway' => $method[0]['provider'],
                                     'date_create' => date('Y-m-d G:i:s'),
+                                    'saldodsb' => $this->users['balance']
                                 ]);
 
                                 $this->session->setFlashdata('success', 'Request Deposit');
@@ -410,7 +411,7 @@ class User extends BaseController {
 
                     return view('User/Topup/detail', $data);
                 } else {
-                    if ($topup_id === 'riwayat') {
+                    if ($topup_id === 'riwayat') {  
                         $data = array_merge($this->base_data, [
                             'title' => 'Top Up',
                             'topup' => $this->M_Base->data_where('topup', 'username', $this->users['username']),
