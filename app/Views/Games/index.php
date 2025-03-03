@@ -17,6 +17,16 @@ h3 {
     }
 }
 
+@media (max-width: 1199px){
+    .icon-diamondx{
+        height: 2.5rem;
+        float: right;
+        margin-top: 20px;
+        width: 25px;
+        height: 25px !important;
+    }
+}
+
 button.accordion-button {
     outline: none !important;
     border: none !important;
@@ -144,7 +154,7 @@ button.accordion-button {
                             <h5 class="kios-card-title text-white">Pilih Nominal Layanan </h5>
                         </div>
                         <div class="card-body">
-                            <div class="row pt-3 pl-2 pr-2 mb-2">
+                            <div class="row pt-3 pl-2 pr-2 pb-3 mb-2">
                                 <?php if (count($product) == 0): ?>
                                 <div class="col-12">
                                     <div class="alert alert-warning alert-dismissible mt-2 mb-0" role="alert">
@@ -369,13 +379,17 @@ button.accordion-button {
                         </div>
                         <div class="card-body">
                             <div class="form-group pt-3">
-
-                                <input type="text" name="wa" placeholder="Masukan No. Whatsapp" class="form-control" value="" required>
+                                <input type="text" name="wa" id="wa" placeholder="Masukan No. Whatsapp" class="form-control" value="" placeholder="+6287882313138" required>
                                 <small class="mt-2 d-block mb-3">
                                     Dengan membeli otomatis saya menyutujui <a href="<?= base_url(); ?>/syarat-ketentuan/" target="_blank" class="text-warning">Ketentuan Layanan</a>.
                                 </small>
-                                <button type="button" class="btn btn-primary text-white" onclick="process_order();">Beli
-                                    Sekarang</button>
+                            </div>
+                            <div class="form-group">
+                                <div class="g-recaptcha" id="g-recaptcha-response" data-sitekey="<?= getenv('GOOGLE_RECAPTCHAV3_SITEKEY') ?>"></div>
+                            </div>
+                            <div class="form-group">
+                            <button type="button" class="btn btn-primary text-white" onclick="process_order();">Beli
+                            Sekarang</button>
                             </div>
                         </div>
                     </div>
@@ -405,8 +419,26 @@ button.accordion-button {
 <?php $this->endSection(); ?>
 
 <?php $this->section('js'); ?>
-
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
 <script>
+function onRecaptchaComplete() {
+    document.querySelector('button[onclick="process_order();"]').disabled = false;
+}
+
+function initRecaptchaValidation() {
+    const buyButton = document.querySelector('button[onclick="process_order();"]');
+    buyButton.disabled = true;
+
+    grecaptcha.ready(function() {
+        grecaptcha.render('g-recaptcha-response', {
+            'sitekey': document.querySelector('.g-recaptcha').dataset.sitekey,
+            'callback': onRecaptchaComplete
+        });
+    });
+}
+
+document.addEventListener('DOMContentLoaded', initRecaptchaValidation);
+
 $('#wa').on('input', function() {
     if (this.value.startsWith('08')) {
         this.value = "628";
@@ -610,7 +642,6 @@ function update_total() {
 }
 
 function process_order() {
-
     <?php if ($games['target'] == 'joki'): ?>
     var user_id = $('.name-joki').map(function() {
         return this.value;

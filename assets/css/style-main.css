@@ -147,6 +147,7 @@ img.card {
   border-radius: 5px;
   width: 100%;
   font-size: 10px;
+  padding-bottom: 15px;
 }
 
 .radio-nominale:checked + label {
