@@ -20,8 +20,8 @@ class AyolinxEnums
   const BNI_PROD = "98828222";
   const CIMB_SB = "2056";
   const CIMB_PROD = "2056";
-  const MANDIRI_SB = "666";
-  const MANDIRI_PROD = "999";
+  const MANDIRI_SB = "87319";
+  const MANDIRI_PROD = "87319";
 
   //status code 
   const SUCCESS_CODE = 00;
@@ -37,6 +37,7 @@ class AyolinxEnums
   const SUCCESS_DANA = '2005400';
   const SUCCESS_QRIS = '2004700';
   const SUCCESS_VA_BNI = '2002700';
+  const SUCCESS_VA_MANDIRI = '2002700';
   const UNAUTHORIZED = '581000001';
   const SUCCESS_GET_TOKENVA = '2007300';
   const SUCCESS_CALLBACKVA = '2002500';

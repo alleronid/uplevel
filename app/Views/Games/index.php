@@ -421,21 +421,21 @@ button.accordion-button {
 <?php $this->section('js'); ?>
 <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 <script>
-function onRecaptchaComplete() {
-    document.querySelector('button[onclick="process_order();"]').disabled = false;
-}
+// function onRecaptchaComplete() {
+//     document.querySelector('button[onclick="process_order();"]').disabled = false;
+// }
 
-function initRecaptchaValidation() {
-    const buyButton = document.querySelector('button[onclick="process_order();"]');
-    buyButton.disabled = true;
+// function initRecaptchaValidation() {
+//     const buyButton = document.querySelector('button[onclick="process_order();"]');
+//     buyButton.disabled = true;
 
-    grecaptcha.ready(function() {
-        grecaptcha.render('g-recaptcha-response', {
-            'sitekey': document.querySelector('.g-recaptcha').dataset.sitekey,
-            'callback': onRecaptchaComplete
-        });
-    });
-}
+//     grecaptcha.ready(function() {
+//         grecaptcha.render('g-recaptcha-response', {
+//             'sitekey': document.querySelector('.g-recaptcha').dataset.sitekey,
+//             'callback': onRecaptchaComplete
+//         });
+//     });
+// }
 
 document.addEventListener('DOMContentLoaded', initRecaptchaValidation);
 
@@ -625,9 +625,9 @@ function get_price(id = null) {
                 if (alfamartd !== null) {
                     alfamartd.innerHTML = 'Rp ' + (Math.round(harga + 2500)).toLocaleString('id-ID');
                 }
-                if (vamandirid !== null) {
-                    vamandirid.innerHTML = 'Rp ' + (Math.round(harga + 4000)).toLocaleString('id-ID');
-                }
+                // if (vamandirid !== null) {
+                //     vamandirid.innerHTML = 'Rp ' + (Math.round(harga + 4000)).toLocaleString('id-ID');
+                // }
 
 
 

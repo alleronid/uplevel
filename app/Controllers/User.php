@@ -325,7 +325,7 @@ class User extends BaseController {
                                         $result = $this->ayolinxService->generateVA($body);
                                         $result = json_decode($result, true);
                                         if ($result) {
-                                            if ($result['responseCode'] == AyolinxEnums::SUCCESS_VA_BNI) {
+                                            if ($result['responseCode'] == AyolinxEnums::SUCCESS_VA_MANDIRI) {
                                                 $payment_code = $result['virtualAccountData']['virtualAccountNo'];
                                                 } else {
                                                     $this->session->setFlashdata('error', 'Result : ' . $result['responseMessage']);

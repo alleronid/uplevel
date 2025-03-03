@@ -138,8 +138,10 @@
 												</div>
 												<div class="pb-4"> Waktu Transaksi <h5><?= $topup['date_create']; ?></h5>
 												</div>
+												<?php if ($topup['payment_type'] == 'QRIS' ): ?>
 												<div class="pb-4"> QR VALID Sampai <h5><?= date('Y-m-d H:i:s', strtotime('+5 minutes', strtotime($topup['date_create']))); ?></h5>
 												</div>
+												<?php endif ?>
 												<div class="pb-4">
 													Rincian Topup <h5>Topup Saldo</h5>
 												</div>
