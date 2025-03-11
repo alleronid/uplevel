@@ -177,7 +177,8 @@ class User extends BaseController {
                                                 "value" => $price
                                             ],
                                             "additionalInfo" => [
-                                                "channel" => AyolinxEnums::QRIS
+                                                "channel" => AyolinxEnums::QRIS,
+                                                // "subMerchantId" => "000580132685"
                                             ]
                                         ];
                                         $result = $this->ayolinxService->generateQris($body);
@@ -197,7 +198,7 @@ class User extends BaseController {
                                         $price = ceil($amount * $rate);
                                         $biaya_admin = max(0, $price - $amount);
                                         $currentTimestamp = time();
-                                        $twoMonthsLater = strtotime("+2 months", $currentTimestamp);
+                                        $twoMonthsLater = strtotime("+1 months", $currentTimestamp);
                                         $body = [
                                             "partnerReferenceNo" => $topup_id,
                                             "validUpTo" => (string) $twoMonthsLater,
@@ -217,7 +218,8 @@ class User extends BaseController {
                                             ],
                                             "additionalInfo" => [
                                                 "channel" => AyolinxEnums::EWALLET
-                                            ]
+                                            ],
+                                            "subMerchantId" => "216620060009008054580"
                                         ];
                                         
                                         $result = $this->ayolinxService->walletDana($body);

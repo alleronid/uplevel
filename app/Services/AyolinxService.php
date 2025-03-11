@@ -29,6 +29,7 @@ class AyolinxService
     } catch (Exception $e) {
       echo $e;
     }
+    
     $base64_signature = base64_encode($signature);
     return $base64_signature;
   }
