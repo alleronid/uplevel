@@ -43,7 +43,8 @@ class AyolinxService
 		);
 
     $headers = array_merge($defaultHeaders, $headers);
-        $baseUrl =  AyolinxEnums::URL_PROD.$url;
+        $baseUrl =  AyolinxEnums::URL_DEV.$url;
+
 
 		curl_setopt($ch, CURLOPT_URL, $baseUrl);
 		curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
@@ -82,7 +83,7 @@ class AyolinxService
     $curl = curl_init();
 
     curl_setopt_array($curl, array(
-        CURLOPT_URL => AyolinxEnums::URL_PROD . $url,
+        CURLOPT_URL => AyolinxEnums::URL_DEV . $url,
       CURLOPT_RETURNTRANSFER => true,
       CURLOPT_ENCODING => '',
       CURLOPT_MAXREDIRS => 10,
