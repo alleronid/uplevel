@@ -97,7 +97,7 @@
 
 									<?php if ($orders['status'] == 'Pending'): ?>
 
-										<?php if ($orders['payment_type'] == 'QRIS' && $orders['payment_gateway'] == 'Ayolinx' && $currentTime < $expiryDate): ?>
+										<?php if ($orders['payment_type'] == 'QRIS' && ($orders['payment_gateway'] == 'Ayolinx' || $orders['payment_gateway'] == 'ZapxPay') && $currentTime < $expiryDate): ?>
 
 											<div class="pb-4"><b> SCAN QR CODE dibawah ini </b><br>
 												<img id="qrCodeImage" src="https://api.qrserver.com/v1/create-qr-code/?data=<?= $orders['payment_code']; ?>&size=200x200" class="mt-3	" alt="" title="" />
@@ -120,7 +120,7 @@
 
 
 
-										<?php elseif ($orders['payment_type'] == 'QRIS' && $orders['payment_gateway'] == 'Ayolinx'): ?>
+										<?php elseif ($orders['payment_type'] == 'QRIS' && ($orders['payment_gateway'] == 'Ayolinx' || $orders['payment_gateway'] == 'ZapxPay')): ?>
 
 										<?php else: ?>
 											<div class="pb-4"> No Rekening / No. Virtual Account <br>

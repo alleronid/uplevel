@@ -412,7 +412,7 @@
                                             <path opacity="0.4" d="M11.9971 12.5838C14.9351 12.5838 17.2891 10.2288 17.2891 7.29176C17.2891 4.35476 14.9351 1.99976 11.9971 1.99976C9.06008 1.99976 6.70508 4.35476 6.70508 7.29176C6.70508 10.2288 9.06008 12.5838 11.9971 12.5838Z" fill="currentColor"></path>
                                         </svg>
                                         <div class="caption ms-3 d-none d-md-block ">
-                                            <h6 class="mb-0 caption-title"><?= $account['username']; ?></h6>
+                                            <h6 class="mb-0 caption-title"><?= $account['username'] ?? ''; ?></h6>
                                             <p class="mb-0 caption-sub-title">Administrator</p>
                                         </div>
                                     </a>

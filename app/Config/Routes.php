@@ -117,6 +117,7 @@ $routes->match(['get', 'post'], '/user/topup/(:any)', 'User::topup/$1');
 $routes->match(['get', 'post'], '/user/riwayat', 'User::riwayat');
 
 $routes->match(['get', 'post'], '/sistem/callback/(:any)', 'Sistem::callback/$1');
+$routes->match(['get', 'post'], '/sistem/callback_omnibayar', 'Sistem::callback_omnibayar');
 
 $routes->match(['get', 'post'], '/generate-pembayaran', 'Ayolinx::generateQris');
 
@@ -124,6 +125,8 @@ $routes->match(['get', 'post'], '/v1.0/transfer-va/payment', 'Ayolinx::paymentVA
 $routes->match(['get', 'post'], '/v1.0/qr/qr-mpm-notify', 'Ayolinx::paymentCallback');
 $routes->match(['get', 'post'], '/v1.0/debit/notify', 'Ayolinx::paymentCallback');
 $routes->match(['get', 'post'], '/v1.0/access-token/b2b', 'Ayolinx::generateAccessToken');
+
+$routes->match(['get', 'post'], '/payment-notify-callback', 'ZapxPay::paymentCallback');
 
 /*
  * --------------------------------------------------------------------

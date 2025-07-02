@@ -4,14 +4,17 @@ namespace App\Controllers;
 
 use App\Enums\AyolinxEnums;
 use App\Services\AyolinxService;
+use App\Services\ZapxPayService;
 
 class User extends BaseController {
 
     private $ayolinxService;
+    private $zipzapService;
 
     public function __construct()
     {
         $this->ayolinxService = new AyolinxService();
+        $this->zipzapService = new ZapxPayService();
     }
 
     public function index() {
@@ -80,7 +83,7 @@ class User extends BaseController {
 
             $data = array_merge($this->base_data, [
                 'title' => 'Beranda',
-                'username' => $users[0]['username'],
+                'username' => $users[0]['username'] ?? '',
                 'orders' => $this->M_Base->data_count('orders', ['username' => $this->users['username']]),
                 'jumlahorder' => $this->M_Base->jumlah('orders','price', [
                     'status' => 'Success',
@@ -146,7 +149,7 @@ class User extends BaseController {
                     } else if (empty($data_post['method'])) {
                         $this->session->setFlashdata('error', 'Metode tidak boleh kosong');
                         return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
-                    } else if ($data_post['nominal'] < 10000) {
+                    } else if ($data_post['nominal'] < 0) {
                         $this->session->setFlashdata('error', 'Topup minimal Rp 10.000');
                         return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
                     } else if ($data_post['nominal'] > 5000000) {
@@ -158,46 +161,44 @@ class User extends BaseController {
 
                         if (count($method) === 1) {
                             if ($method[0]['status'] == 'On') {
-
-                                
-
                                 $topup_id = 'TPP'.date('Ymd') . rand(0000,9999);
                                 $uniq = $method[0]['uniq'] == 'Y' ? rand(111,999) : 0;
                                 $amount = $data_post['nominal'] + $uniq;
                                 $biaya_admin = 0;
-                                if ($method[0]['provider'] == 'Ayolinx') {
+                                if ($method[0]['provider'] == 'Omnibayar'){
+
                                     $rate = number_format(1 + ($method[0]['mdr_rate'] / 100), 3, '.', '');
-                                    if (strcasecmp($method[0]['method'], 'QRIS') == 0) {
+                                    if (strcasecmp($method[0]['method'], 'QRIS Omnibayar') == 0) {
                                         $price = round(($amount * $rate));
                                         $biaya_admin = max(0, $price - $amount);
+                                        $username = $this->users['username'];
+
                                         $body = [
-                                            "partnerReferenceNo" => $topup_id,
-                                            "amount" => [
-                                                "currency" => "IDR",
-                                                "value" => $price
-                                            ],
-                                            "additionalInfo" => [
-                                                "channel" => AyolinxEnums::QRIS
-                                            ]
+                                            "transaction_id" => $topup_id,
+                                            "amount" => $price,
+                                            "fullname" => $username,
+                                            "email" => null,
+                                            "phone_number" => null
                                         ];
-                                        $result = $this->ayolinxService->generateQris($body);
+
+                                        $result = $this->omnibayarService->generate_qris($body);
                                         $result = json_decode($result, true);
                                         if ($result) {
-                                            if ($result['responseCode'] == AyolinxEnums::SUCCESS_QRIS) {
-                                                $payment_code = $result['qrContent'];
+                                            if (isset($result['QrContent'])) {
+                                                $payment_code = $result['QrContent'];
                                             } else {
-                                                $this->session->setFlashdata('error', 'Result : ' . $result['responseMessage']);
+                                                $this->session->setFlashdata('error', 'Response tidak memiliki QR Content');
                                                 return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
                                             }
                                         } else {
-                                            $this->session->setFlashdata('error', 'Gagal terkoneksi ke ayolinx');
+                                            $this->session->setFlashdata('error', 'Gagal terkoneksi ke omnibayar');
                                             return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
                                         }
                                     } elseif (strcasecmp($method[0]['method'], 'DANA') == 0) {
                                         $price = ceil($amount * $rate);
                                         $biaya_admin = max(0, $price - $amount);
                                         $currentTimestamp = time();
-                                        $twoMonthsLater = strtotime("+2 months", $currentTimestamp);
+                                        $twoMonthsLater = strtotime("+1 months", $currentTimestamp);
                                         $body = [
                                             "partnerReferenceNo" => $topup_id,
                                             "validUpTo" => (string) $twoMonthsLater,
@@ -217,7 +218,181 @@ class User extends BaseController {
                                             ],
                                             "additionalInfo" => [
                                                 "channel" => AyolinxEnums::EWALLET
+                                            ],
+                                            "subMerchantId" => "216620060009008054580"
+                                        ];
+
+                                        $result = $this->ayolinxService->walletDana($body);
+                                        $result = json_decode($result, true);
+                                        if ($result) {
+                                            if ($result['responseCode'] == AyolinxEnums::SUCCESS_DANA) {
+                                                $payment_code = $result['webRedirectUrl'];
+                                            } else {
+                                                $this->session->setFlashdata('error', 'Result : ' . $result['responseMessage']);
+                                                return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
+                                            }
+                                        } else {
+                                            $this->session->setFlashdata('error', 'Gagal terkoneksi ke ayolinx');
+                                            return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
+                                        }
+                                    } elseif (strcasecmp($method[0]['method'], 'BNI VIRTUAL ACCOUNT') == 0){
+                                        $price = ceil($amount + ($amount * 0.002) + 4000);
+                                        $biaya_admin = max(0, $price - $amount);
+                                        $number = $this->ayolinxService->customerNo();
+                                        $username = $this->users['username'];
+                                        $body = [
+                                            "partnerServiceId" => AyolinxEnums::BNI_SB,
+                                            "customerNo" => AyolinxEnums::BNI_SB.$number,
+                                            // "virtualAccountNo" => AyolinxEnums::BNI_SB."0169",
+                                            "virtualAccountName" =>  $username,
+                                            "trxId" => $topup_id,
+                                            "virtualAccountTrxType" => "C",
+                                            "totalAmount" => [
+                                                "value" => $price,
+                                                "currency" => "IDR"
+                                            ],
+                                            "additionalInfo" => [
+                                                "channel" => AyolinxEnums::VABNI
                                             ]
+                                        ];
+
+                                        $result = $this->ayolinxService->generateVA($body);
+                                        $result = json_decode($result, true);
+                                        if ($result) {
+                                            if ($result['responseCode'] == AyolinxEnums::SUCCESS_VA_BNI) {
+                                                $payment_code = $result['virtualAccountData']['virtualAccountNo'];
+                                            } else {
+                                                $this->session->setFlashdata('error', 'Result : ' . $result['responseMessage']);
+                                                return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
+                                            }
+                                        } else {
+                                            $this->session->setFlashdata('error', 'Gagal terkoneksi ke ayolinx');
+                                            return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
+                                        }
+                                    } elseif (strcasecmp($method[0]['method'], 'CIMB VIRTUAL ACCOUNT') == 0){
+                                        $price = ceil($amount + ($amount * 0.002) + 4000);
+                                        $biaya_admin = max(0, $price - $amount);
+                                        $number = $this->ayolinxService->customerNo();
+                                        $username = $this->users['username'];
+                                        $body = [
+                                            "partnerServiceId" => AyolinxEnums::CIMB_SB,
+                                            "customerNo" => AyolinxEnums::CIMB_SB.$number,
+                                            // "virtualAccountNo" => AyolinxEnums::BNI_SB."0169",
+                                            "virtualAccountName" =>  $username,
+                                            "trxId" => $topup_id,
+                                            "virtualAccountTrxType" => "C",
+                                            "totalAmount" => [
+                                                "value" => $price,
+                                                "currency" => "IDR"
+                                            ],
+                                            "additionalInfo" => [
+                                                "channel" => AyolinxEnums::VACIMB
+                                            ]
+                                        ];
+
+                                        $result = $this->ayolinxService->generateVA($body);
+                                        $result = json_decode($result, true);
+                                        if ($result) {
+                                            if ($result['responseCode'] == AyolinxEnums::SUCCESS_VA_BNI) {
+                                                $payment_code = $result['virtualAccountData']['virtualAccountNo'];
+                                            } else {
+                                                $this->session->setFlashdata('error', 'Result : ' . $result['responseMessage']);
+                                                return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
+                                            }
+                                        } else {
+                                            $this->session->setFlashdata('error', 'Gagal terkoneksi ke ayolinx');
+                                            return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
+                                        }
+                                    } elseif (strcasecmp($method[0]['method'], 'MANDIRI VIRTUAL ACCOUNT') == 0){
+                                        $price = ceil($amount + ($amount * 0.002) + 4000);
+                                        $biaya_admin = max(0, $price - $amount);
+                                        $number = $this->ayolinxService->customerNo();
+                                        $username = $this->users['username'];
+                                        $body = [
+                                            "partnerServiceId" => AyolinxEnums::MANDIRI_SB,
+                                            "customerNo" => AyolinxEnums::MANDIRI_SB.$number,
+                                            // "virtualAccountNo" => AyolinxEnums::BNI_SB."0169",
+                                            "virtualAccountName" =>  $username,
+                                            "trxId" => $topup_id,
+                                            "virtualAccountTrxType" => "C",
+                                            "totalAmount" => [
+                                                "value" => $price,
+                                                "currency" => "IDR"
+                                            ],
+                                            "additionalInfo" => [
+                                                "channel" => AyolinxEnums::VAMANDIRI
+                                            ]
+                                        ];
+
+                                        $result = $this->ayolinxService->generateVA($body);
+                                        $result = json_decode($result, true);
+                                        if ($result) {
+                                            if ($result['responseCode'] == AyolinxEnums::SUCCESS_VA_MANDIRI) {
+                                                $payment_code = $result['virtualAccountData']['virtualAccountNo'];
+                                            } else {
+                                                $this->session->setFlashdata('error', 'Result : ' . $result['responseMessage']);
+                                                return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
+                                            }
+                                        } else {
+                                            $this->session->setFlashdata('error', 'Gagal terkoneksi ke ayolinx');
+                                            return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
+                                        }
+                                    }
+                                } elseif ($method[0]['provider'] == 'Ayolinx') {
+                                    $rate = number_format(1 + ($method[0]['mdr_rate'] / 100), 3, '.', '');
+                                    if (strcasecmp($method[0]['method'], 'QRIS') == 0) {
+                                        $price = round(($amount * $rate));
+                                        $biaya_admin = max(0, $price - $amount);
+                                        $body = [
+                                            "partnerReferenceNo" => $topup_id,
+                                            "amount" => [
+                                                "currency" => "IDR",
+                                                "value" => $price
+                                            ],
+                                            "additionalInfo" => [
+                                                "channel" => AyolinxEnums::QRIS,
+                                                // "subMerchantId" => "000580132685"
+                                            ]
+                                        ];
+                                        $result = $this->ayolinxService->generateQris($body);
+                                        $result = json_decode($result, true);
+                                        if ($result) {
+                                            if ($result['responseCode'] == AyolinxEnums::SUCCESS_QRIS) {
+                                                $payment_code = $result['qrContent'];
+                                            } else {
+                                                $this->session->setFlashdata('error', 'Result : ' . $result['responseMessage']);
+                                                return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
+                                            }
+                                        } else {
+                                            $this->session->setFlashdata('error', 'Gagal terkoneksi ke ayolinx');
+                                            return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
+                                        }
+                                    } elseif (strcasecmp($method[0]['method'], 'DANA') == 0) {
+                                        $price = ceil($amount * $rate);
+                                        $biaya_admin = max(0, $price - $amount);
+                                        $currentTimestamp = time();
+                                        $twoMonthsLater = strtotime("+1 months", $currentTimestamp);
+                                        $body = [
+                                            "partnerReferenceNo" => $topup_id,
+                                            "validUpTo" => (string) $twoMonthsLater,
+                                            "amount" => [
+                                                "currency" => "IDR",
+                                                "value" => $price
+                                            ],
+                                            "urlParams" => [
+                                                [
+                                                    "type" => "PAY_RETURN",
+                                                    "url" => base_url() . '/user/topup/' . $topup_id
+                                                ],
+                                                [
+                                                    "type" => "NOTIFICATION",
+                                                    "url" => base_url() . '/ayolinx/paymentcallback?refNo=' . $topup_id
+                                                ]
+                                            ],
+                                            "additionalInfo" => [
+                                                "channel" => AyolinxEnums::EWALLET
+                                            ],
+                                            "subMerchantId" => "216620060009008054580"
                                         ];
                                         
                                         $result = $this->ayolinxService->walletDana($body);
@@ -307,8 +482,38 @@ class User extends BaseController {
                                         $number = $this->ayolinxService->customerNo();
                                         $username = $this->users['username'];
                                         $body = [
-                                                "partnerServiceId" => AyolinxEnums::MANDIRI_SB,
-                                                "customerNo" => AyolinxEnums::MANDIRI_SB.$number,
+                                                "partnerServiceId" => AyolinxEnums::MANDIRI_PROD,
+                                                "customerNo" => AyolinxEnums::MANDIRI_PROD.$number,
+                                                "virtualAccountNo" => AyolinxEnums::MANDIRI_PROD."01699548",
+                                                "virtualAccountName" =>  $username,
+                                                "trxId" => $topup_id,
+                                                "virtualAccountTrxType" => "O",
+                                            "additionalInfo" => [
+                                                "channel" => AyolinxEnums::VAMANDIRI
+                                            ]
+                                        ];
+
+                                        $result = $this->ayolinxService->generateVA($body);
+                                        $result = json_decode($result, true);
+                                        if ($result) {
+                                            if ($result['responseCode'] == AyolinxEnums::SUCCESS_VA_MANDIRI) {
+                                                $payment_code = $result['virtualAccountData']['virtualAccountNo'];
+                                                } else {
+                                                    $this->session->setFlashdata('error', 'Result : ' . $result['responseMessage']);
+                                                    return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
+                                                }
+                                            } else {
+                                                $this->session->setFlashdata('error', 'Gagal terkoneksi ke ayolinx');
+                                                return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
+                                            }
+                                    } elseif (strcasecmp($method[0]['method'], 'BRI VIRTUAL ACCOUNT') == 0){
+                                        $price = ceil($amount + ($amount * 0.002) + 4000);
+                                        $biaya_admin = max(0, $price - $amount);
+                                        $number = $this->ayolinxService->customerNo();
+                                        $username = $this->users['username'];
+                                        $body = [
+                                                "partnerServiceId" => AyolinxEnums::BRI_PROD,
+                                                "customerNo" => AyolinxEnums::BRI_PROD.$number,
                                                 // "virtualAccountNo" => AyolinxEnums::BNI_SB."0169",
                                                 "virtualAccountName" =>  $username,
                                                 "trxId" => $topup_id,
@@ -318,14 +523,14 @@ class User extends BaseController {
                                                   "currency" => "IDR"
                                             ],
                                             "additionalInfo" => [
-                                                "channel" => AyolinxEnums::VAMANDIRI
+                                                "channel" => AyolinxEnums::VABRI
                                             ]
                                         ];
 
                                         $result = $this->ayolinxService->generateVA($body);
                                         $result = json_decode($result, true);
                                         if ($result) {
-                                            if ($result['responseCode'] == AyolinxEnums::SUCCESS_VA_BNI) {
+                                            if ($result['responseCode'] == AyolinxEnums::SUCCESS_VA_MANDIRI) {
                                                 $payment_code = $result['virtualAccountData']['virtualAccountNo'];
                                                 } else {
                                                     $this->session->setFlashdata('error', 'Result : ' . $result['responseMessage']);
@@ -337,11 +542,34 @@ class User extends BaseController {
                                             }
                                     }
 
-                                } else if ($method[0]['provider'] == 'Manual') {
-                                    $payment_code = $method[0]['rek'];
-                                } else {
-                                    $this->session->setFlashdata('error', 'Metode tidak terdaftar');
-                                    return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
+                                } else if ($method[0]['provider'] == 'ZapxPay'){
+                                    $amount = $amount + 2000;
+                                    $body = [
+                                        "productCode" => (integer) $method[0]['code'],
+                                        "currency"=>  "IDR",
+                                        "amount"=>  (string) $amount,
+                                        "mchOrderNo"=>  (string) $topup_id,
+                                        "remark"=>  "remark",
+                                        "userName"=> "alleron-user",
+                                        "expireTime" => "3600"
+                                    ];
+
+                                    if ($method[0]['code'] == '41') {
+                                        $body['payReturnUrl'] = "https://alleron.id/payment-notify-callback?refNo=" . $topup_id;
+                                        $body['notifyUrl']    = "https://alleron.id/payment-notify-callback";
+                                    }
+
+                                    $result = $this->zipzapService->generatePayment($body);
+                                    $result = json_decode($result);
+                                    if($result){
+                                        if($result->code == 0){
+                                            $payment_code = $result->data->payCode;
+                                        }else{
+                                            $this->session->setFlashdata('error', 'Result : ' . $result['responseMessage']);
+                                            return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
+                                        }
+                                    }
+                                }else if ($method[0]['provider'] == 'Manual') {
                                 }
 
                                 $this->M_Base->data_insert('topup', [

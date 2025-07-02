@@ -60,8 +60,8 @@ class Ayolinx extends BaseController
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
 		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
-    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-    curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
 		curl_setopt($ch, CURLOPT_TIMEOUT, 0);
 
 		return curl_exec($ch);
@@ -389,7 +389,7 @@ class Ayolinx extends BaseController
       return $this->response->setJSON($ret);
   }
 
-  private function verifySignatureCallback($headerSign, $body){
+  private function verifySignatureCallback($headerSign, $body, $url="/v1.0/qr/qr-mpm-notify"){
       $public_key_ayo_path = '../keys/public_key_notify_itg_sand.pem';
       $public_key_ayo = file_get_contents($public_key_ayo_path);
 
@@ -400,7 +400,7 @@ class Ayolinx extends BaseController
           return $this->response->setJSON(['responseCode' => AyolinxEnums::ERR_AYOLINK_TOKEN_NO_AUTH_ERROR, 'responseMessage' => 'Internal Server Error, Public Key Empty']);
       }
 
-      $url = "/v1.0/qr/qr-mpm-notify";
+      $url = $url;
       $method = "POST";
       $timestamp = $this->timestamp ?? date("c");
       $hash = hash('sha256', json_encode($body));
@@ -413,6 +413,7 @@ class Ayolinx extends BaseController
       }
   }
 
+  // callback for method QRIS
   public function paymentCallback(){
       $body_raw = file_get_contents('php://input');
       $body = json_decode($body_raw);
@@ -429,7 +430,7 @@ class Ayolinx extends BaseController
        }
     
       // verify signature matiin dulu
-      $this->verifySignatureCallback($headerSign, $body_raw);
+      $this->verifySignatureCallback($headerSign, $body_raw, '/v1.0/qr/qr-mpm-notify');
     
       $payment_amount = 0;
       $payment_type = '';
@@ -473,6 +474,7 @@ class Ayolinx extends BaseController
       }elseif($payment_type == 'Order'){
           $check_order = $this->M_Base->data_where_2('orders', $check_order_where);
       }
+      
 
       if (!empty($check_order)) {
           return $this->response->setJSON(['responseCode' => AyolinxEnums::SUCCESS_CALLBACK, 'responseMessage' => 'Successfully1']);
@@ -507,11 +509,23 @@ class Ayolinx extends BaseController
           }
 
           return $this->response->setJSON(['responseCode' =>AyolinxEnums::SUCCESS_CALLBACKVA, 'responseMessage' => 'Successful3']);
+      }else{
+            if ($payment_type == 'Topup') {
+                $this->M_Base->data_update('topup', [
+                    'status' => 'Canceled'
+                ], $order[0]['id']);
+            }else{
+                $this->M_Base->data_update('orders', [
+                    'status' => 'Canceled'
+                ], $order[0]['id']);
+      
+            }
       }
 
       return $this->response->setJSON(['responseCode' => AyolinxEnums::SUCCESS_CALLBACK, 'responseMessage' => 'Successfully4']);
   }
 
+  // callback for method VA
    public function paymentVACallback(){
       $body_raw = file_get_contents('php://input');
       $body = json_decode($body_raw);
@@ -519,6 +533,55 @@ class Ayolinx extends BaseController
 
       insert_log($body_raw, json_encode(getallheaders()), 'callbackVA.log');
 
+      // $this->snapCallbackVA($body, $headers);
+      $this->nonSnapCallbackVA($body, $body_raw, $headers);
+  }
+
+  private function checkCallbackVA($param)
+  {
+      $timestamp = $_SERVER['HTTP_X_TIMESTAMP'];
+      $partner_id = $_SERVER['HTTP_X_PARTNER_ID'];
+      $signature = $_SERVER['HTTP_X_SIGNATURE'];
+      $external_id = $_SERVER['HTTP_X_EXTERNAL_ID'];
+      $channel_id = $_SERVER['HTTP_X_CHANNEL_ID'];
+
+      $auth = $_SERVER['HTTP_AUTHORIZATION'];
+      $access_token = trim(str_replace('Bearer ','', $auth));
+
+      $client_id = $this->M_Base->u_get('alleron-key');
+      // $client_secret = $this->M_Base->u_get('ayolinx-secret');
+
+      if ($partner_id != $client_id) {
+          return $this->response->setJSON(['responseCode' => AyolinxEnums::ERR_AYOLINK_PAYMENT_BAD_REQ, 'responseMessage' => 'Unauthorized client key!']);
+      }
+
+      if (empty($signature)) {
+          return $this->response->setJSON(['responseCode' => AyolinxEnums::ERR_AYOLINK_PAYMENT_BAD_REQ, 'responseMessage' => 'Empty Signature!']);
+      }
+
+      // mikirin cara nyimpen token hasil generate-an
+      // $redis_config = Conf::get('component/redis');
+      // $cache = new Cache($redis_config);
+      // $token_ret = $cache->get($access_token);
+      // if (empty($token_ret) || $token_ret != $client_id) {
+      //     throw new BusinessException(ErrorCode::ERR_AYOLINK_PAYMENT_NO_AUTH_ERROR, 'Unauthorized Client');
+      // }
+
+      // $method = 'POST';
+      // $url = '/v1.0/transfer-va/payment';
+      // $hashedBody = hash('sha256', json_encode($param));
+      // $str = "{$method}:{$url}:{$access_token}:{$hashedBody}:{$timestamp}";
+      // $sign_local = base64_encode(hash_hmac('sha512', $str, $client_secret, true));
+      //
+      // if ($signature != $sign_local) {
+      //     throw new Exception('Invalid Signature');
+      //     return $this->response->setJSON(['responseCode' => AyolinxEnums::ERR_AYOLINK_PAYMENT_BAD_REQ, 'responseMessage' => 'Invalid Signature']);
+      // }
+
+      return true;
+  }
+
+  private function snapCallbackVA($body, $headers){
       // $header_timestamp = $headers['X-TIMESTAMP']->getValue();
       // $header_client_key = $headers['X-CLIENT-KEY']->getValue();
       // $header_signature = $headers['X-SIGNATURE']->getValue();
@@ -565,7 +628,7 @@ class Ayolinx extends BaseController
       }
 
       if(empty($order) || $payment_amount == 0){
-          throw new Exception('Order not found!');
+          return $this->response->setJSON(['responseCode' => AyolinxEnums::ERR_AYOLINK_PAYMENT_BAD_REQ, 'responseMessage' => 'Order Not Found!']);
       }
 
       $callback_id = 'CLB'.date('Ymd') . rand(0000,9999);
@@ -594,7 +657,7 @@ class Ayolinx extends BaseController
       }
 
       if (!empty($check_order)) {
-        return $this->response->setJSON(['responseCode' => AyolinxEnums::SUCCESS_CALLBACKVA, 'responseMessage' => 'Successfully']);
+          return $this->response->setJSON(['responseCode' => AyolinxEnums::SUCCESS_CALLBACKVA, 'responseMessage' => 'Successfully']);
       }
 
       header('Content-Type: application/json');
@@ -625,68 +688,158 @@ class Ayolinx extends BaseController
               $this->updateOrder($status_callback, $order[0]['order_id']);
           }
 
-          $resp = [
-              'responseCode' => AyolinxEnums::SUCCESS_CALLBACKVA,
-              'responseMessage' => 'Success',
-              'virtualAccountData' => [
-                  'partnerServiceId' => $body->partnerServiceId,
-                  'customerNo' => $body->customerNo,
-                  'virtualAccountNo' => $body->virtualAccountNo,
-                  'trxId' => $body->trxId,
-                  'paidAmount' => $body->paidAmount,
-                  'paymentRequestId' => $body->paymentRequestId,
-                  'virtualAccountTrxType' => $body->virtualAccountTrxType,
-                  'additionalInfo' => $body->additionalInfo,
-              ],
-          ];
-
-          header('Content-Type: application/json');
-          return $this->response->setJSON($resp);
+      }else{
+          if ($payment_type == 'Topup') {
+              $this->M_Base->data_update('topup', [
+                  'status' => 'Canceled'
+              ], $order[0]['id']);
+          }else{
+              $this->M_Base->data_update('orders', [
+                  'status' => 'Canceled'
+              ], $order[0]['id']);
+          }
       }
+
+      $resp = [
+          'responseCode' => AyolinxEnums::SUCCESS_CALLBACKVA,
+          'responseMessage' => 'Success',
+          'virtualAccountData' => [
+              'partnerServiceId' => $body->partnerServiceId,
+              'customerNo' => $body->customerNo,
+              'virtualAccountNo' => $body->virtualAccountNo,
+              'trxId' => $body->trxId,
+              'paidAmount' => $body->paidAmount,
+              'paymentRequestId' => $body->paymentRequestId,
+              'virtualAccountTrxType' => $body->virtualAccountTrxType,
+              'additionalInfo' => $body->additionalInfo,
+          ],
+      ];
+
+      header('Content-Type: application/json');
+      return $this->response->setJSON($resp);
   }
 
-  private function checkCallbackVA($param)
-  {
-      $timestamp = $_SERVER['HTTP_X_TIMESTAMP'];
-      $partner_id = $_SERVER['HTTP_X_PARTNER_ID'];
-      $signature = $_SERVER['HTTP_X_SIGNATURE'];
-      $external_id = $_SERVER['HTTP_X_EXTERNAL_ID'];
-      $channel_id = $_SERVER['HTTP_X_CHANNEL_ID'];
+  private function nonSnapCallbackVA($body, $body_raw, $headers){
+      $headerSign = $headers['X-Signature']->getValue();
 
-      $auth = $_SERVER['HTTP_AUTHORIZATION'];
-      $access_token = trim(str_replace('Bearer ','', $auth));
+      $this->verifySignatureCallback($headerSign, $body_raw, '/v1.0/transfer-va/payment');
 
-      $client_id = $this->M_Base->u_get('alleron-key');
-      // $client_secret = $this->M_Base->u_get('ayolinx-secret');
+      $status_callback = 'SUCCESS';
+      $refNo = $body->originalPartnerReferenceNo ?? null;
 
-      if ($partner_id != $client_id) {
-          return $this->response->setJSON(['responseCode' => AyolinxEnums::ERR_AYOLINK_PAYMENT_BAD_REQ, 'responseMessage' => 'Unauthorized client key!']);
+      if (empty($body->additionalInfo->channel)) {
+          $status_callback = 'Failed';
+          return $this->response->setJSON(['responseCode' => AyolinxEnums::ERR_AYOLINK_PAYMENT_BAD_REQ, 'responseMessage' => 'Invalid Mandatory Field channel']);
       }
 
-      if (empty($signature)) {
-          return $this->response->setJSON(['responseCode' => AyolinxEnums::ERR_AYOLINK_PAYMENT_BAD_REQ, 'responseMessage' => 'Empty Signature!']);
+      if (empty($body->amount->value)) {
+          $status_callback = 'Failed';
+          return $this->response->setJSON(['responseCode' => AyolinxEnums::ERR_AYOLINK_PAYMENT_BAD_REQ, 'responseMessage' => 'Invalid Mandatory Field amount value']);
       }
 
-      // mikirin cara nyimpen token hasil generate-an
-      // $redis_config = Conf::get('component/redis');
-      // $cache = new Cache($redis_config);
-      // $token_ret = $cache->get($access_token);
-      // if (empty($token_ret) || $token_ret != $client_id) {
-      //     throw new BusinessException(ErrorCode::ERR_AYOLINK_PAYMENT_NO_AUTH_ERROR, 'Unauthorized Client');
-      // }
+      if (empty($body->finishedTime)) {
+          $status_callback = 'Failed';
+          return $this->response->setJSON(['responseCode' => AyolinxEnums::ERR_AYOLINK_PAYMENT_BAD_REQ, 'responseMessage' => 'Invalid Mandatory Field finishedTime']);
+      }
 
-      // $method = 'POST';
-      // $url = '/v1.0/transfer-va/payment';
-      // $hashedBody = hash('sha256', json_encode($param));
-      // $str = "{$method}:{$url}:{$access_token}:{$hashedBody}:{$timestamp}";
-      // $sign_local = base64_encode(hash_hmac('sha512', $str, $client_secret, true));
-      //
-      // if ($signature != $sign_local) {
-      //     throw new Exception('Invalid Signature');
-      //     return $this->response->setJSON(['responseCode' => AyolinxEnums::ERR_AYOLINK_PAYMENT_BAD_REQ, 'responseMessage' => 'Invalid Signature']);
-      // }
+      $payment_amount = 0;
+      $payment_type = '';
 
-      return true;
+      if (empty($refNo)) {
+          return $this->response->setJSON(['responseCode' => AyolinxEnums::ERR_AYOLINK_PAYMENT_BAD_REQ, 'responseMessage' => 'refNo cannot be null!']);
+      }
+
+      $order = $this->M_Base->data_where('orders', 'order_id', $refNo);
+      if (empty($order)){
+          // if not found in orders table then is topup
+          $order = $this->M_Base->data_where('topup', 'topup_id', $refNo); 
+          $payment_type = 'Topup';
+          $payment_amount = $order[0]['amount'] ?? 0;
+      } else{
+          $payment_type = 'Order';
+          $payment_amount = $order[0]['price'] ?? 0;
+      }
+
+      if(empty($order) || $payment_amount == 0){
+          return $this->response->setJSON(['responseCode' => AyolinxEnums::ERR_AYOLINK_PAYMENT_BAD_REQ, 'responseMessage' => 'Order Not Found!']);
+      }
+
+      $callback_id = 'CLB'.date('Ymd') . rand(0000,9999);
+      $callback_data = [
+          'callback_id'                   => $callback_id,
+          'payment_gateway'               => 'Ayolinx',
+          'payment_type'                  => $payment_type,
+          'payment_amount'                => $payment_amount,
+          'status'                        => $status_callback,
+          'partner_reference_no'          => $refNo ?? null, // nomor kita
+          'original_reference_no'         => $body->originalReferenceNo ?? null, // nomor ayolink (PG)
+          'original_partner_reference_no' => $body->originalPartnerReferenceNo ?? null, // nomor BNI (merchant)
+          'date_create'                   => date('Y-m-d G:i:s', strtotime($body->finishedTime)),
+          'request_body'                  => $body_raw,
+      ];
+
+      $this->M_Base->data_insert('callback', $callback_data);
+
+      $check_order = null;
+      $check_order_where['status'] = 'Success';
+      $check_order_where[strtolower($payment_type).'_id'] = $refNo;
+      if ($payment_type == 'Topup') {
+          $check_order = $this->M_Base->data_where_2('topup', $check_order_where);
+      }elseif($payment_type == 'Order'){
+          $check_order = $this->M_Base->data_where_2('orders', $check_order_where);
+      }
+
+      if (!empty($check_order)) {
+          return $this->response->setJSON(['responseCode' => AyolinxEnums::SUCCESS_CALLBACKVA, 'responseMessage' => 'Successfully']);
+      }
+
+      header('Content-Type: application/json');
+      if ($status_callback == 'SUCCESS') {
+          if ($payment_type == 'Topup') {
+              $user = $this->M_Base->data_where('users', 'username', $order[0]['username']); 
+              $balance = $user[0]['balance'] ?? 0;
+              $new_balance = $balance + $payment_amount;
+
+              $this->M_Base->data_update('users', [
+                  'balance' => $new_balance
+              ], $user[0]['id']);
+
+              $this->M_Base->data_update('topup', [
+                  'status' => 'Success'
+              ], $order[0]['id']);
+          }else{
+              $user = $this->M_Base->data_where('users', 'username', $order[0]['username']) ?? null; 
+              if ($order[0]['method_code'] == 'Balance' && !empty($user)) {
+                  $balance = $user[0]['balance'] ?? 0;
+                  $new_balance = $balance - $payment_amount;
+
+                  $this->M_Base->data_update('users', [
+                      'balance' => $new_balance
+                  ], $user[0]['id']);
+              }
+
+              $this->updateOrder($status_callback, $order[0]['order_id']);
+          }
+      }else{
+          if ($payment_type == 'Topup') {
+              $this->M_Base->data_update('topup', [
+                  'status' => 'Canceled'
+              ], $order[0]['id']);
+          }else{
+              $this->M_Base->data_update('orders', [
+                  'status' => 'Canceled'
+              ], $order[0]['id']);
+
+          }
+      }
+
+      $resp = [
+          'responseCode' => AyolinxEnums::SUCCESS_CALLBACK,
+          'responseMessage' => 'Successful'
+      ];
+
+      header('Content-Type: application/json');
+      return $this->response->setJSON($resp);
   }
 
   private function updateOrder($status_callback, $order_id){

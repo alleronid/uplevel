@@ -2,8 +2,17 @@
 
 namespace App\Controllers;
 
+use App\Enums\AyolinxEnums;
+use App\Services\OmnibayarService;
+
 class Sistem extends BaseController
 {
+    private $omnibayarService;
+
+    public function __construct()
+    {
+        $this->omnibayarService = new OmnibayarService();
+    }
 
 	public function product()
 	{
@@ -127,13 +136,11 @@ class Sistem extends BaseController
 
 	public function rawprice()
 	{
-
 		$df_user = $this->M_Base->u_get('digi-user');
 		$df_key = $this->M_Base->u_get('digi-key');
 
 		$ag_merchant = $this->M_Base->u_get('ag-merchant');
 		$ag_secret = $this->M_Base->u_get('ag-secret');
-
 
 		$product_digi = $this->M_Base->data_where('product', 'provider', 'DF');
 
@@ -154,8 +161,8 @@ class Sistem extends BaseController
 			curl_setopt($ch, CURLOPT_POSTFIELDS, $post_data);
 			$result = curl_exec($ch);
 			$result = json_decode($result, true);
-
-			if (count($result['data']) > 10) {
+			print_r($result);
+			if (count($result['data']) > 0) {
 				foreach ($result['data'] as $loop) {
 
 					if ($loop['buyer_product_status'] == true and $loop['seller_product_status'] == true) {
@@ -473,6 +480,7 @@ class Sistem extends BaseController
 
 								$status = 'Processing';
 
+
 								echo json_encode([
 									'success' => true,
 									'message' => 'Pembayaran Berhasil diterima Sistem Website',
@@ -628,4 +636,45 @@ class Sistem extends BaseController
 		}
 
 	}
+
+    /**
+     * Callback function to receive payment notifications from Omnibayar -> ayolinkx. 
+     *
+     * @return void
+     */
+    public function callback_omnibayar()
+    {
+        $body_raw = file_get_contents('php://input');
+        $body = json_decode($body_raw);
+        $headers = getallheaders();
+
+        insert_log($body_raw, json_encode($headers), 'callback-omnibayar.log', null);
+
+        try {
+            if (empty($body)) {
+                throw new \InvalidArgumentException('Invalid request');
+            }
+
+            if (!isset($body->channel_payment)) {
+                throw new \InvalidArgumentException('Missing channel_payment');
+            }
+
+            if ($body->channel_payment == 'BNC_QRIS'){
+                $ret = $this->omnibayarService->payment_qris($body_raw, $headers);
+            }
+
+            if ($ret['status'] == 'success') {
+                return $this->response->setJSON([
+                    'status'           => 'success',
+                    'responseMessage'  => $ret['message']
+                ]);
+            } 
+        } catch (\Throwable $e) {
+            return $this->response->setJSON([
+                'status'           => 'failed',
+                'responseMessage'  => $e->getMessage()
+            ]);
+        }
+    }
+    
 }

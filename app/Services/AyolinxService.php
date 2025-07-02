@@ -29,6 +29,7 @@ class AyolinxService
     } catch (Exception $e) {
       echo $e;
     }
+    
     $base64_signature = base64_encode($signature);
     return $base64_signature;
   }
@@ -43,6 +44,7 @@ class AyolinxService
 
     $headers = array_merge($defaultHeaders, $headers);
         $baseUrl =  AyolinxEnums::URL_PROD.$url;
+
 
 		curl_setopt($ch, CURLOPT_URL, $baseUrl);
 		curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
