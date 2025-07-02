@@ -4,15 +4,18 @@ namespace App\Controllers;
 
 use App\Services\AyolinxService;
 use App\Enums\AyolinxEnums;
+use App\Services\ZapxPayService;
 use Exception;
 
 class Games extends BaseController
 {
     private $ayolinxService;
+    private $zipzapService;
 
     public function __construct()
     {
         $this->ayolinxService = new AyolinxService();
+        $this->zipzapService = new ZapxPayService();
     }
 
     public function index($slug = null)
@@ -988,7 +991,7 @@ class Games extends BaseController
 
                                             if ($this->M_Base->u_get('pay_balance') == 'Y') {
 
-                                                $level = $this->users['level'];
+                                                $level = $this->users['level'] ?? "Members";
 
                                                 $price = $product_price;
 
@@ -1220,7 +1223,7 @@ class Games extends BaseController
 
                                                     $result = $this->ayolinxService->generateVA($body);
                                                     $result = json_decode($result, true);
-                                                    print_r($result);die();
+                                                    // print_r($result);die();
                                                     if ($result) {
                                                         if ($result['responseCode'] == AyolinxEnums::SUCCESS_VA_BNI) {
                                                             $payment_code = $result['virtualAccountData']['virtualAccountNo'];
@@ -1237,8 +1240,8 @@ class Games extends BaseController
                                                     $price = ceil($product_price + ($product_price * $rate) + $method[0]['amount_fee']);
                                                     $number = $this->ayolinxService->customerNo();
                                                     $body = [
-                                                            "partnerServiceId" => AyolinxEnums::MANDIRI_SB,
-                                                            "customerNo" => AyolinxEnums::MANDIRI_SB.$number,
+                                                            "partnerServiceId" => AyolinxEnums::MANDIRI_PROD,
+                                                            "customerNo" => AyolinxEnums::MANDIRI_PROD.$number,
                                                             // "virtualAccountNo" => AyolinxEnums::MANDIRI_SB."666",
                                                             "virtualAccountName" =>  $username,
                                                             "trxId" => $order_id,
@@ -1254,7 +1257,6 @@ class Games extends BaseController
 
                                                     $result = $this->ayolinxService->generateVA($body);
                                                     $result = json_decode($result, true);
-                                                    print_r($result);die();
                                                     if ($result) {
                                                         if ($result['responseCode'] == AyolinxEnums::SUCCESS_VA_BNI) {
                                                             $payment_code = $result['virtualAccountData']['virtualAccountNo'];
@@ -1266,6 +1268,35 @@ class Games extends BaseController
                                                             $this->session->setFlashdata('error', 'Gagal terkoneksi ke ayolinx');
                                                             return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
                                                         }
+                                                }
+                                            } else if ($method[0]['provider'] == 'ZapxPay'){
+                                                $amount = $product_price + 4000;
+                                                $price = $product_price + 4000;
+                                                $body = [
+                                                    "productCode" => (integer) $method[0]['code'],
+                                                    "currency"=>  "IDR",
+                                                    "amount"=>  (string) $amount,
+                                                    "mchOrderNo"=>  (string) $order_id,
+                                                    "remark"=>  "remark",
+                                                    "userName"=> "alleron-user",
+                                                    "expireTime" => "3600"
+                                                ];
+            
+                                                if ($method[0]['code'] == '41') {
+                                                    $body['payReturnUrl'] = "https://alleron.id/payment-notify-callback?refNo=" . $order_id;
+                                                    $body['notifyUrl']    = "https://alleron.id/payment-notify-callback";
+                                                }
+            
+                                                $result = $this->zipzapService->generatePayment($body);
+                                                $result = json_decode($result);
+                                                // die(print_r($result));
+                                                if($result){
+                                                    if($result->code == 0){
+                                                        $payment_code = $result->data->payCode;
+                                                    }else{
+                                                        $this->session->setFlashdata('error', 'Result : ' . $result['responseMessage']);
+                                                        return redirect()->to(str_replace('index.php/', '', site_url(uri_string())));
+                                                    }
                                                 }
                                             } else if ($method[0]['provider'] == 'Balance') {
                                                 if ($this->users == false) {
@@ -1496,7 +1527,7 @@ class Games extends BaseController
                     $product_price = $product[0]['price'];
 
                     if ($this->users !== false) {
-                        $level = $this->users['level'];
+                        $level = $this->users['level'] ?? 'Silver';
 
                         if ($level == 'Silver') {
 
@@ -1586,7 +1617,8 @@ class Games extends BaseController
                             ]);
 
                             $real_price = count($price) == 1 ? $price[0]['price'] : $product[0]['price'];
-                            $rate = number_format(1 + ($method[0]['mdr_rate'] / 100), 3, '.', '');
+                            $rate = 0;
+                            // $rate = number_format(1 + ($method[0]['mdr_rate'] / 100), 3, '.', '');
                             if (strcasecmp($method[0]['method'], 'QRIS') == 0) {
                                 $totalPembayaran = round(($real_price * $rate));
                             } elseif (strcasecmp($method[0]['method'], 'DANA') == 0) {
@@ -1595,7 +1627,9 @@ class Games extends BaseController
                                 $totalPembayaran = ceil($real_price + ($real_price * 0.002) + 4000);
                             } elseif(strcasecmp($method[0]['method'], 'CIMB VIRTUAL ACCOUNT')== 0){
                                 $totalPembayaran = ceil($real_price + ($real_price * 0.002) + 4000);
-                            } 
+                            } else {
+                                $totalPembayaran = $real_price;
+                            }
 
                             $biaya_admin = max(0, $totalPembayaran - $real_price);
 

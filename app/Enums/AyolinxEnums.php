@@ -14,6 +14,7 @@ class AyolinxEnums
   const VABNI = 'VIRTUAL_ACCOUNT_BNI';
   const VACIMB = 'VIRTUAL_ACCOUNT_CIMB';
   const VAMANDIRI = 'VIRTUAL_ACCOUNT_MANDIRI';
+  const VABRI = "VIRTUAL_ACCOUNT_BRI";
 
   //partnerID
   const BNI_SB = "98829172";
@@ -22,6 +23,8 @@ class AyolinxEnums
   const CIMB_PROD = "2056";
   const MANDIRI_SB = "87319";
   const MANDIRI_PROD = "87319";
+  const BRI_SB = "15574";
+  const BRI_PROD = "15574";
 
   //status code 
   const SUCCESS_CODE = 00;

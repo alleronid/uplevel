@@ -94,7 +94,7 @@
 											<div class="form-group row" hidden>
 												<label class="col-md-4 col-form-label text-white">Komisi Referal</label>
 												<div class="col-md-8">
-													<input type="number" class="form-control" value="<?= $komisi_ref; ?>" name="komisi_ref" autocomplete="off">
+													<input type="number" class="form-control" value="<?= $komisi_ref ?? '5'; ?>" name="komisi_ref" autocomplete="off">
 												</div>
 											</div>
 											<div class="text-right">

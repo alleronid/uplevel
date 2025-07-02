@@ -60,8 +60,8 @@ class Ayolinx extends BaseController
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
 		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
-    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-    curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
 		curl_setopt($ch, CURLOPT_TIMEOUT, 0);
 
 		return curl_exec($ch);
@@ -413,6 +413,7 @@ class Ayolinx extends BaseController
       }
   }
 
+  // callback for method QRIS
   public function paymentCallback(){
       $body_raw = file_get_contents('php://input');
       $body = json_decode($body_raw);
@@ -473,6 +474,7 @@ class Ayolinx extends BaseController
       }elseif($payment_type == 'Order'){
           $check_order = $this->M_Base->data_where_2('orders', $check_order_where);
       }
+      
 
       if (!empty($check_order)) {
           return $this->response->setJSON(['responseCode' => AyolinxEnums::SUCCESS_CALLBACK, 'responseMessage' => 'Successfully1']);
@@ -507,11 +509,23 @@ class Ayolinx extends BaseController
           }
 
           return $this->response->setJSON(['responseCode' =>AyolinxEnums::SUCCESS_CALLBACKVA, 'responseMessage' => 'Successful3']);
+      }else{
+            if ($payment_type == 'Topup') {
+                $this->M_Base->data_update('topup', [
+                    'status' => 'Canceled'
+                ], $order[0]['id']);
+            }else{
+                $this->M_Base->data_update('orders', [
+                    'status' => 'Canceled'
+                ], $order[0]['id']);
+      
+            }
       }
 
       return $this->response->setJSON(['responseCode' => AyolinxEnums::SUCCESS_CALLBACK, 'responseMessage' => 'Successfully4']);
   }
 
+  // callback for method VA
    public function paymentVACallback(){
       $body_raw = file_get_contents('php://input');
       $body = json_decode($body_raw);
@@ -674,24 +688,35 @@ class Ayolinx extends BaseController
               $this->updateOrder($status_callback, $order[0]['order_id']);
           }
 
-          $resp = [
-              'responseCode' => AyolinxEnums::SUCCESS_CALLBACKVA,
-              'responseMessage' => 'Success',
-              'virtualAccountData' => [
-                  'partnerServiceId' => $body->partnerServiceId,
-                  'customerNo' => $body->customerNo,
-                  'virtualAccountNo' => $body->virtualAccountNo,
-                  'trxId' => $body->trxId,
-                  'paidAmount' => $body->paidAmount,
-                  'paymentRequestId' => $body->paymentRequestId,
-                  'virtualAccountTrxType' => $body->virtualAccountTrxType,
-                  'additionalInfo' => $body->additionalInfo,
-              ],
-          ];
-
-          header('Content-Type: application/json');
-          return $this->response->setJSON($resp);
+      }else{
+          if ($payment_type == 'Topup') {
+              $this->M_Base->data_update('topup', [
+                  'status' => 'Canceled'
+              ], $order[0]['id']);
+          }else{
+              $this->M_Base->data_update('orders', [
+                  'status' => 'Canceled'
+              ], $order[0]['id']);
+          }
       }
+
+      $resp = [
+          'responseCode' => AyolinxEnums::SUCCESS_CALLBACKVA,
+          'responseMessage' => 'Success',
+          'virtualAccountData' => [
+              'partnerServiceId' => $body->partnerServiceId,
+              'customerNo' => $body->customerNo,
+              'virtualAccountNo' => $body->virtualAccountNo,
+              'trxId' => $body->trxId,
+              'paidAmount' => $body->paidAmount,
+              'paymentRequestId' => $body->paymentRequestId,
+              'virtualAccountTrxType' => $body->virtualAccountTrxType,
+              'additionalInfo' => $body->additionalInfo,
+          ],
+      ];
+
+      header('Content-Type: application/json');
+      return $this->response->setJSON($resp);
   }
 
   private function nonSnapCallbackVA($body, $body_raw, $headers){
@@ -795,15 +820,26 @@ class Ayolinx extends BaseController
 
               $this->updateOrder($status_callback, $order[0]['order_id']);
           }
+      }else{
+          if ($payment_type == 'Topup') {
+              $this->M_Base->data_update('topup', [
+                  'status' => 'Canceled'
+              ], $order[0]['id']);
+          }else{
+              $this->M_Base->data_update('orders', [
+                  'status' => 'Canceled'
+              ], $order[0]['id']);
 
-          $resp = [
-              'responseCode' => AyolinxEnums::SUCCESS_CALLBACK,
-              'responseMessage' => 'Successful'
-          ];
-
-          header('Content-Type: application/json');
-          return $this->response->setJSON($resp);
+          }
       }
+
+      $resp = [
+          'responseCode' => AyolinxEnums::SUCCESS_CALLBACK,
+          'responseMessage' => 'Successful'
+      ];
+
+      header('Content-Type: application/json');
+      return $this->response->setJSON($resp);
   }
 
   private function updateOrder($status_callback, $order_id){
